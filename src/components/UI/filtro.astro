@@ -1,0 +1,208 @@
+---
+import { Icon } from "astro-icon/components";
+
+const brands = ["RayBan", "Oakley", "Persol", "Warby Parker", "Tom Ford"];
+const frameTypes = ["Full Rim", "Half Rim", "Rimless", "Browline"];
+const colors = ["Black", "Gold", "Silver", "Tortoise", "Crystal", "Havana"];
+---
+
+<!-- Sidebar with filters -->
+<aside
+  class="w-64 bg-white p-6 shadow-lg rounded-r-none rounded-bl-md max-h-px sm:rounded-lg"
+  style="max-height: 840px;"
+>
+  <h2 class="text-2xl font-bold mb-6 text-[#3de440e5] flex items-center">
+    <Icon name="glasses" class="w-6 h-6 mr-2" />
+    Filtros
+  </h2>
+  <div class="space-y-6">
+    <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
+      <label
+        for="price-range"
+        class="text-[#3de440e5] font-semibold flex items-center mb-2"
+      >
+        <Icon name="dollar-sign" class="w-5 h-5 mr-2" />
+        Rango de Precio
+      </label>
+      <input
+        type="range"
+        id="price-range"
+        min="0"
+        max="400"
+        step="10"
+        value="200"
+        class="w-full h-2 bg-[#3de440e5] rounded-lg appearance-none cursor-pointer"
+      />
+      <div class="flex justify-between text-sm text-gray-600 mt-2">
+        <span id="min-price">$0</span>
+        <span id="max-price">$400</span>
+      </div>
+    </div>
+
+    <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
+      <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
+        <Icon name="square" class="w-5 h-5 mr-2" />
+        Marca
+      </label>
+      <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
+        {
+          brands.map((brand) => (
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id={`brand-${brand}`}
+                value={brand}
+                class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
+              />
+              <label for={`brand-${brand}`} class="ml-2 text-sm text-gray-700">
+                {brand}
+              </label>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
+      <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
+        <Icon name="glasses" class="w-5 h-5 mr-2" />
+        Tipo de Montura
+      </label>
+      <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
+        {
+          frameTypes.map((frameType) => (
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id={`frame-${frameType}`}
+                value={frameType}
+                class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
+              />
+              <label
+                for={`frame-${frameType}`}
+                class="ml-2 text-sm text-gray-700"
+              >
+                {frameType}
+              </label>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
+      <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
+        <Icon name="palette" class="w-5 h-5 mr-2" />
+        Color
+      </label>
+      <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
+        {
+          colors.map((color) => (
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id={`color-${color}`}
+                value={color}
+                class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
+              />
+              <label for={`color-${color}`} class="ml-2 text-sm text-gray-700">
+                {color}
+              </label>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</aside>
+
+<script>
+  document.addEventListener("DOMContentLoaded", (event) => {
+    let priceRange = 200;
+    let selectedBrands = [];
+    let selectedFrameTypes = [];
+    let selectedColors = [];
+
+    const priceRangeInput = document.getElementById(
+      "price-range"
+    ) as HTMLInputElement;
+    const minPriceSpan = document.getElementById("min-price");
+    const maxPriceSpan = document.getElementById("max-price");
+    const eyeglassesGrid = document.getElementById("eyeglasses-grid");
+
+    function updatePriceRange() {
+      priceRange = parseInt(priceRangeInput.value);
+      minPriceSpan.textContent = `$0`;
+      maxPriceSpan.textContent = `$${priceRange}`;
+      filterEyeglasses();
+    }
+
+    function updateFilters(filterType, value) {
+      const filterArray =
+        filterType === "brand"
+          ? selectedBrands
+          : filterType === "frame"
+            ? selectedFrameTypes
+            : filterType === "color"
+              ? selectedColors
+              : selectedColors;
+
+      const index = filterArray.indexOf(value);
+      if (index > -1) {
+        filterArray.splice(index, 1);
+      } else {
+        filterArray.push(value);
+      }
+      filterEyeglasses();
+    }
+
+    function filterEyeglasses() {
+      const eyeglasses = Array.from(eyeglassesGrid.children) as HTMLElement[];
+      for (let glasses of eyeglasses) {
+        const price = parseInt(
+          glasses
+            .querySelector(".bg-\\[\\#3de440e5\\]")
+            .textContent.replace("$", "")
+        );
+        const brand = glasses
+          .querySelector("p:nth-of-type(1)")
+          .textContent.replace("Marca: ", "");
+        const frameType = glasses
+          .querySelector("p:nth-of-type(2)")
+          .textContent.replace("Tipo: ", "");
+        const color = glasses
+          .querySelector("p:nth-of-type(3)")
+          .textContent.replace("Color: ", "");
+
+        const matchesPrice = price <= priceRange;
+        const matchesBrand =
+          selectedBrands.length === 0 || selectedBrands.includes(brand);
+        const matchesFrameType =
+          selectedFrameTypes.length === 0 ||
+          selectedFrameTypes.includes(frameType);
+        const matchesColor =
+          selectedColors.length === 0 || selectedColors.includes(color);
+
+        if (matchesPrice && matchesBrand && matchesFrameType && matchesColor) {
+          glasses.style.display = "";
+        } else {
+          glasses.style.display = "none";
+        }
+      }
+    }
+
+    priceRangeInput.addEventListener("input", updatePriceRange);
+
+    document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+      checkbox.addEventListener("change", (e) => {
+        const target = e.target as HTMLInputElement;
+        const filterType = target.id.split("-")[0];
+        const value = target.value;
+        updateFilters(filterType, value);
+      });
+    });
+
+    // Initial filter
+    updatePriceRange();
+  });
+</script>

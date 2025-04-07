@@ -1,0 +1,537 @@
+---
+import { Icon } from "astro-icon/components";
+import { getAllProducts } from "../logic/servicioProductos";
+import type { Gafas } from "../models/gafas";
+
+const response = await getAllProducts();
+
+let gafas: Gafas[] = [];
+
+if (response.success && Array.isArray(response.data)) {
+  gafas = response.data.map((producto) => ({
+    id: producto.id,
+    nombre: producto.nombre,
+    marca: producto.marca,
+    precio: producto.precio,
+    stock: producto.stock,
+    imagen: producto.imagen,
+    tipomontura: producto.tipomontura,
+    color: producto.color,
+  }));
+} else {
+  console.error("Error: La respuesta no contiene un arreglo válido.", response);
+}
+---
+
+<div
+  class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-[#e9eef6] p-4 pb-2"
+>
+  <div class="flex items-center justify-between">
+    <!-- Contenedor para botones e input -->
+    <div class="flex items-center justify-between w-full">
+      <!-- Botones -->
+      <div class="flex items-center space-x-2">
+        <button
+          id="editarProducto"
+          class="flex items-center text-black hover:bg-blue-300 p-1 rounded-md"
+        >
+          <Icon
+            name="actualizar"
+            class="w-6 h-6 mr-2 flex items-center text-[#4011ff]"
+          />
+          Actualizar
+        </button>
+        <button
+          id="eliminarProducto"
+          class="flex items-center text-black hover:bg-red-300 p-1 rounded-md"
+        >
+          <Icon
+            name="eliminar"
+            class="w-6 h-6 mr-2 flex items-center text-[#df4d5e]"
+          />
+          Eliminar
+        </button>
+        <button
+          id="agregarProducto"
+          class="flex items-center text-black hover:bg-green-300 p-1 rounded-md"
+        >
+          <Icon
+            name="add"
+            class="w-6 h-6 mr-2 flex items-center text-[#29b73a96]"
+          />
+          Agregar
+        </button>
+      </div>
+      <!-- Input -->
+      <div class="relative ml-auto">
+        <div
+          class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+        >
+          <svg
+            class="w-4 h-4 text-gray-500 dark:text-gray-400"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 20 20"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"></path>
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="inputSearchProduct"
+          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-[#e9eef6] focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Buscar Producto"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- aqui Inicia la Tabla con la Indectacion de los Productos -->
+  <table
+    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 mt-2"
+  >
+    <thead
+      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-green-600 dark:text-white"
+    >
+      <tr>
+        <th scope="col" class="p-4">
+          <Icon name="square" />
+        </th>
+        <th scope="col" class="px-9 py-3">Nombre</th>
+        <th scope="col" class="px-6 py-3">Marca</th>
+        <th scope="col" class="px-6 py-3">Precio</th>
+        <th scope="col" class="px-6 py-3">Stock</th>
+        <th scope="col" class="px-6 py-3">Montura</th>
+        <th scope="col" class="px-6 py-3">Color</th>
+      </tr>
+    </thead>
+
+    <tbody id="productTable">
+      {
+        gafas.length > 0 ? (
+          gafas.map((Gafas) => (
+            <tr class=" border-b bg-[#e9eef6] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-400">
+              <td class="w-4 p-4">
+                <input
+                  type="checkbox"
+                  class="form-checkbox userCheckbox"
+                  data-id={Gafas.id}
+                />
+              </td>
+              <th
+                scope="row"
+                class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
+              >
+                <div class="ps-3">
+                  <div class="hidden">{Gafas.id}</div>
+                  <div class="text-black font-semibold">{Gafas.nombre}</div>
+                </div>
+              </th>
+              <td class="px-6 py-4 text-black">{Gafas.marca}</td>
+              <td class="px-6 py-4 text-black">{Gafas.precio}</td>
+              <td class="px-6 py-4 text-black">{Gafas.stock}</td>
+              <td class="px-6 py-4 text-black">{Gafas.tipomontura}</td>
+              <td class="px-6 py-4 text-black">{Gafas.color}</td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colspan="4" class="px-6 py-4 text-center">
+              No users found.
+            </td>
+          </tr>
+        )
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal para agregar producto -->
+<div
+  id="modalAgregarProductos"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+>
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+    <h3 class="text-xl font-semibold mb-6 text-black text-center">
+      Agregar Producto
+    </h3>
+    <form id="formAgregarProducto" onsubmit="return false;">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Nombre</label
+          >
+          <input
+            type="text"
+            name="nombre"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Marca -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Marca</label
+          >
+          <input
+            type="text"
+            name="marca"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Precio -->
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Precio</label
+          >
+          <input
+            type="number"
+            name="precio"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Stock -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Stock</label
+          >
+          <input
+            type="number"
+            name="stock"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- imagen -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >imagen</label
+          >
+          <input
+            type="text"
+            name="imagen"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Fecha de Nacimiento -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Tipo Montura</label
+          >
+          <input
+            type="text"
+            name="tipomontura"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Fecha de Expedición -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Color</label
+          >
+          <input
+            type="text"
+            name="color"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex justify-end mt-6 space-x-3">
+        <button
+          type="button"
+          id="cancelarModalProductos"
+          class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+        >
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para editar producto -->
+<div
+  id="modalEditarProductos"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+>
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+    <h3 class="text-xl font-semibold mb-6 text-black text-center">
+      Agregar Producto
+    </h3>
+    <form id="formEditarProducto" onsubmit="return false;">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Nombre</label
+          >
+          <input
+            type="text"
+            name="nombre"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Marca -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Marca</label
+          >
+          <input
+            type="text"
+            name="marca"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Precio -->
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Precio</label
+          >
+          <input
+            type="number"
+            name="precio"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Stock -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Stock</label
+          >
+          <input
+            type="number"
+            name="stock"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- imagen -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >imagen</label
+          >
+          <input
+            type="text"
+            name="imagen"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Fecha de Nacimiento -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Tipo Montura</label
+          >
+          <input
+            type="text"
+            name="tipomontura"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Fecha de Expedición -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Color</label
+          >
+          <input
+            type="text"
+            name="color"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex justify-end mt-6 space-x-3">
+        <button
+          type="button"
+          id="cancelarModalProductos"
+          class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+        >
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  let searchQuery = "";
+  const inputSearch = document.getElementById("inputSearchProduct");
+  const userTable = document.getElementById("productTable");
+
+  function filterProduct() {
+    const search = searchQuery.toLowerCase();
+    const rows = Array.from(userTable.children);
+
+    rows.forEach((row) => {
+      const nombre = row.children[1].textContent.toLowerCase();
+      const marca = row.children[2].textContent.toLowerCase();
+      const precio = row.children[3].textContent.toLowerCase();
+      const stock = row.children[4].textContent.toLocaleLowerCase();
+      const montura = row.children[5].textContent.toLocaleLowerCase();
+      const color = row.children[6].textContent.toLocaleLowerCase();
+
+      if (
+        nombre.includes(search) ||
+        marca.includes(search) ||
+        precio.includes(search) ||
+        stock.includes(search) ||
+        montura.includes(search) ||
+        color.includes(search)
+      ) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  }
+
+  inputSearch.addEventListener("input", (event) => {
+    searchQuery = event.target.value;
+    filterProduct();
+  });
+</script>
+
+<script>
+  import { addProducts, deleteProducto } from "../logic/servicioProductos";
+  import type { Gafas } from "../models/gafas";
+
+  document
+    .getElementById("formAgregarProducto")
+    .addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      const productoData = {
+        nombre: formData.get("nombre") as string,
+        marca: formData.get("marca") as string,
+        precio: parseFloat(formData.get("precio") as string),
+        stock: parseInt(formData.get("stock") as string),
+        imagen: formData.get("imagen") as string,
+        tipomontura: formData.get("tipomontura") as string,
+        color: formData.get("color") as string,
+      };
+
+      try {
+        const response = await addProducts(productoData as Gafas);
+        if (response.success) {
+          alert("Producto agregado exitosamente");
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Error en el formulario:", error);
+        alert("Error inesperado. Intenta nuevamente.");
+      }
+    });
+
+  // apertura de modal
+  const modalAgregar = document.getElementById("modalAgregarProductos");
+  const btnAgregarProducto = document.getElementById("agregarProducto");
+  const btncancelarProductos = document.getElementById(
+    "cancelarModalProductos"
+  );
+
+  btnAgregarProducto.addEventListener("click", () => {
+    modalAgregar.classList.remove("hidden");
+  });
+
+  btncancelarProductos.addEventListener("click", () => {
+    modalAgregar.classList.add("hidden");
+    (document.getElementById("formAgregarUsuario") as HTMLFormElement).reset();
+  });
+
+  window.addEventListener("click", (event) => {
+    if (event.target === modalAgregar) {
+      modalAgregar.classList.add("hidden");
+    }
+  });
+
+  // aca realizo la acciones de los chechbox
+  const userCheckboxes = document.querySelectorAll(
+    ".userCheckbox"
+  ) as NodeListOf<HTMLInputElement>;
+
+  userCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      const allChecked = Array.from(userCheckboxes).every(
+        (checkbox) => checkbox.checked
+      );
+      !allChecked &&
+        Array.from(userCheckboxes).some((checkbox) => checkbox.checked);
+    });
+  });
+
+  document
+    .getElementById("eliminarProducto")
+    .addEventListener("click", async () => {
+      const selectedCheckbox = document.querySelector(".userCheckbox:checked");
+
+      if (!selectedCheckbox) {
+        alert("Por favor, selecciona un producto para eliminar.");
+        return;
+      }
+
+      const id = Number(selectedCheckbox.getAttribute("data-id"));
+      console.log(id);
+
+      const confirmDelete = window.confirm(
+        "¿Estás seguro de que deseas eliminar este producto?"
+      );
+
+      if (!confirmDelete) {
+        return;
+      }
+      try {
+        const response = await deleteProducto(id);
+
+        if (response.success) {
+          alert("Productos eliminado con éxito.");
+          location.reload();
+        } else {
+          alert("Hubo un error al eliminar el producto.");
+        }
+      } catch (error) {
+        console.error("Error al eliminar el producto:", error);
+        alert("Hubo un error al intentar eliminar el producto.");
+      }
+    });
+</script>

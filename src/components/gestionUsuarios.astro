@@ -1,0 +1,747 @@
+---
+import { getAllUsuarios } from "../logic/servicioUsuarios";
+import type { Roles } from "../models/roles";
+
+import { Icon } from "astro-icon/components";
+import { getAllRol } from "../logic/servicioRoles";
+
+const response = await getAllUsuarios();
+
+let usuarios = [];
+if (response.success && Array.isArray(response.data)) {
+  usuarios = response.data.map((usuario) => ({
+    id: usuario.usuarioid,
+    rol: usuario.rol,
+    nombre: usuario.nombre,
+    apellido: usuario.apellido,
+    correo: usuario.correo,
+    cedula: usuario.cedula,
+  }));
+} else {
+  console.error(
+    "Error: La respuesta de usuarios no contiene un arreglo válido.",
+    response
+  );
+}
+
+const responseRol = await getAllRol();
+
+let rol: Roles[] = [];
+if (responseRol.success && Array.isArray(responseRol.data)) {
+  rol = responseRol.data.map((roles) => ({
+    id: roles.id,
+    nombre: roles.nombre,
+  }));
+} else {
+  console.error(
+    "Error: La respuesta de roles no contiene un arreglo válido.",
+    responseRol
+  );
+}
+---
+
+<div class="shadow-md sm:rounded-lg bg-[#e9eef6] p-4 pb-2 w-full h-full">
+  <div class="flex items-center justify-between">
+    <!-- Contenedor para botones e input -->
+    <div class="flex items-center justify-between w-full">
+      <!-- Botones -->
+      <div class="flex items-center space-x-2">
+        <button
+          id="editarUsuario"
+          class="flex items-center text-black hover:bg-blue-300 p-1 rounded-md"
+        >
+          <Icon
+            name="actualizar"
+            class="w-6 h-6 mr-2 flex items-center text-[#4011ff]"
+          />
+          Actualizar
+        </button>
+        <button
+          id="eliminarUsuario"
+          class="flex items-center text-black hover:bg-red-300 p-1 rounded-md"
+        >
+          <Icon
+            name="eliminar"
+            class="w-6 h-6 mr-2 flex items-center text-[#df4d5e]"
+          />
+          Eliminar
+        </button>
+        <button
+          id="agregarUsuario"
+          class="flex items-center text-black hover:bg-green-300 p-1 rounded-md"
+        >
+          <Icon
+            name="add"
+            class="w-6 h-6 mr-2 flex items-center text-[#29b73a96]"
+          />
+          Agregar
+        </button>
+      </div>
+      <!-- Input -->
+      <div class="relative ml-auto">
+        <div
+          class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+        >
+          <svg
+            class="w-4 h-4 text-gray-500 dark:text-gray-400"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 20 20"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"></path>
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="inputSearch"
+          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-[#e9eef6] focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Buscar Usuario"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- aqui Inicia la Tabla con la Indectacion de los Usuarios -->
+  <table
+    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 mt-2"
+  >
+    <thead
+      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-green-600 dark:text-white"
+    >
+      <tr>
+        <th scope="col" class="p-4">
+          <Icon name="square" />
+        </th>
+        <th scope="col" class="px-9 py-3">Nombre</th>
+        <th scope="col" class="px-6 py-3">Rol</th>
+        <th scope="col" class="px-6 py-3">Documento</th>
+      </tr>
+    </thead>
+
+    <tbody id="userTable">
+      {
+        usuarios.length > 0 ? (
+          usuarios.map((usuario) => (
+            <tr class=" border-b bg-[#e9eef6] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-400">
+              <td class="w-4 p-4">
+                <input
+                  type="checkbox"
+                  class="form-checkbox userCheckbox"
+                  data-id={usuario.id}
+                />
+              </td>
+              <th
+                scope="row"
+                class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
+              >
+                <div class="ps-3">
+                  <div class="hidden">{usuario.id}</div>
+                  <div class="text-black font-semibold">
+                    {usuario.nombre} {usuario.apellido}
+                  </div>
+                  <div class="font-normal text-gray-500">{usuario.correo}</div>
+                </div>
+              </th>
+              <td class="px-6 py-4 text-black">{usuario.rol}</td>
+              <td class="px-6 py-4 text-black">{usuario.cedula}</td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colspan="4" class="px-6 py-4 text-center">
+              No users found.
+            </td>
+          </tr>
+        )
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal para agregar usuario -->
+<div
+  id="modalAgregar"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+>
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+    <h3 class="text-xl font-semibold mb-6 text-black text-center">
+      Agregar Usuario
+    </h3>
+    <form id="formAgregarUsuario" onsubmit="return false;">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Nombre</label
+          >
+          <input
+            type="text"
+            name="nombre"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Apellido -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Apellido</label
+          >
+          <input
+            type="text"
+            name="apellido"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Correo -->
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Correo</label
+          >
+          <input
+            type="email"
+            name="correo"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+            autocomplete="current-email"
+          />
+        </div>
+
+        <!-- Contraseña -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Contraseña</label
+          >
+          <input
+            type="password"
+            name="contraseña"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+        <!-- Cédula -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Cédula</label
+          >
+          <input
+            type="text"
+            name="cedula"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Fecha de Nacimiento -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Fecha de Nacimiento</label
+          >
+          <input
+            type="date"
+            name="fechaNacimiento"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Fecha de Expedición -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Fecha de Expedición</label
+          >
+          <input
+            type="date"
+            name="fechaExpedicion"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Rol -->
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rol</label
+          >
+          <select
+            name="rolId"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          >
+            {rol.map((role) => <option value={role.id}>{role.nombre}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex justify-end mt-6 space-x-3">
+        <button
+          type="button"
+          id="cancelarModal"
+          class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+        >
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para editar usuario -->
+<div
+  id="modalEditar"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+>
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+    <h3 class="text-xl font-semibold mb-6 text-black text-center">
+      EditarUsuario
+    </h3>
+    <form id="formEditarUsuario" onsubmit="return false;">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Id -->
+        <div class="hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-1">id</label>
+          <input
+            type="text"
+            name="id"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Nombre</label
+          >
+          <input
+            type="text"
+            name="nombre"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Apellido -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Apellido</label
+          >
+          <input
+            type="text"
+            name="apellido"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Correo -->
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Correo</label
+          >
+          <input
+            type="email"
+            name="correo"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+            autocomplete="current-email"
+          />
+        </div>
+
+        <!-- Contraseña -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Contraseña</label
+          >
+          <input
+            type="password"
+            name="contraseña"
+            autocomplete="current-password"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+          />
+        </div>
+        <!-- Cédula -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Cédula</label
+          >
+          <input
+            type="text"
+            name="cedula"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Fecha de Nacimiento -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Fecha de Nacimiento</label
+          >
+          <input
+            type="date"
+            name="fechaNacimiento"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+        <!-- Fecha de Expedición -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Fecha de Expedición</label
+          >
+          <input
+            type="date"
+            name="fechaExpedicion"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          />
+        </div>
+
+        <!-- Rol -->
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rol</label
+          >
+          <select
+            name="rolId"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            required
+          >
+            {rol.map((role) => <option value={role.id}>{role.nombre}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex justify-end mt-6 space-x-3">
+        <button
+          type="button"
+          id="cancelarModalEditar"
+          class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+        >
+          Cancelar
+        </button>
+        <button
+          id="btnGuardarSubmit"
+          type="submit"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+        >
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  let searchQuery = "";
+  const inputSearch = document.getElementById("inputSearch");
+  const userTable = document.getElementById("userTable");
+
+  function filterUsers() {
+    const search = searchQuery.toLowerCase();
+    const rows = Array.from(userTable.children);
+
+    rows.forEach((row) => {
+      const nombre = row.children[1].textContent.toLowerCase();
+      const correo = row.children[1].textContent.toLowerCase();
+      const rol = row.children[2].textContent.toLowerCase();
+      const documento = row.children[3].textContent.toLocaleLowerCase();
+
+      if (
+        nombre.includes(search) ||
+        correo.includes(search) ||
+        rol.includes(search) ||
+        documento.includes(search)
+      ) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  }
+
+  inputSearch.addEventListener("input", (event) => {
+    searchQuery = event.target.value;
+    filterUsers();
+  });
+</script>
+
+<script>
+  import {
+    addUsuario,
+    deleteUsuario,
+    getAllUsuarios,
+    uptdateUser,
+  } from "../logic/servicioUsuarios";
+  document
+    .getElementById("formAgregarUsuario")
+    .addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      // aqui se realiza el guardado de usuario
+      const usuarioData = {
+        nombre: formData.get("nombre") as string,
+        segundoNombre: formData.get("segundoNombre")
+          ? (formData.get("segundoNombre") as string)
+          : undefined,
+        apellido: formData.get("apellido") as string,
+        segundoApellido: formData.get("segundoApellido")
+          ? (formData.get("segundoApellido") as string)
+          : undefined,
+        cedula: formData.get("cedula") as string,
+        fechaNacimiento: new Date(formData.get("fechaNacimiento") as string),
+        fechaExpedicion: new Date(formData.get("fechaExpedicion") as string),
+        correo: formData.get("correo") as string,
+        contraseña: formData.get("contraseña") as string,
+        rolId: Number(formData.get("rolId")),
+      };
+
+      try {
+        const response = await addUsuario(usuarioData);
+
+        if (response.success) {
+          alert("Usuario agregado exitosamente");
+          window.location.reload();
+        } else {
+          alert(`Error al agregar el usuario: ${response.error}`);
+        }
+      } catch (error) {
+        console.error("Error en el formulario:", error);
+        alert("Error inesperado. Intenta nuevamente.");
+      }
+    });
+
+  //aca se reealiza apertura de modal y demas acciones
+  const modalAgregar = document.getElementById("modalAgregar");
+  const btnAgregarUsuario = document.getElementById("agregarUsuario");
+  const btnCancelarModal = document.getElementById("cancelarModal");
+
+  btnAgregarUsuario.addEventListener("click", () => {
+    modalAgregar.classList.remove("hidden");
+  });
+
+  btnCancelarModal.addEventListener("click", () => {
+    modalAgregar.classList.add("hidden");
+    (document.getElementById("formAgregarUsuario") as HTMLFormElement).reset();
+  });
+
+  window.addEventListener("click", (event) => {
+    if (event.target === modalAgregar) {
+      modalAgregar.classList.add("hidden");
+    }
+  });
+  // aca realizo la acciones de los chechbox
+  const userCheckboxes = document.querySelectorAll(
+    ".userCheckbox"
+  ) as NodeListOf<HTMLInputElement>;
+
+  userCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      const allChecked = Array.from(userCheckboxes).every(
+        (checkbox) => checkbox.checked
+      );
+      !allChecked &&
+        Array.from(userCheckboxes).some((checkbox) => checkbox.checked);
+    });
+  });
+  // edit usuario
+  document
+    .getElementById("editarUsuario")
+    .addEventListener("click", async () => {
+      const selectedCheckbox = document.querySelector(".userCheckbox:checked");
+
+      if (!selectedCheckbox) {
+        alert("Por favor, selecciona un usuario para eliminar.");
+        return;
+      }
+
+      const userId = Number(selectedCheckbox.getAttribute("data-id"));
+
+      if (!userId) {
+        alert("No se encontró el ID del usuario.");
+        return;
+      }
+
+      try {
+        const response = await getAllUsuarios();
+        if (!response.success) {
+          alert("Error al obtener los usuarios.");
+          return;
+        }
+
+        const usuario = response.data.find(
+          (user) => user.usuarioid === String(userId)
+        );
+
+        if (!usuario) {
+          alert("Usuario no encontrado.");
+          return;
+        }
+        const modalEditar = document.getElementById("modalEditar");
+
+        // Llena los campos del formulario en el modal de edición
+        (modalEditar.querySelector("[name='id']") as HTMLInputElement).value =
+          usuario.usuarioid || "";
+        (
+          modalEditar.querySelector("[name='nombre']") as HTMLInputElement
+        ).value = usuario.nombre || "";
+        (
+          modalEditar.querySelector("[name='apellido']") as HTMLInputElement
+        ).value = usuario.apellido || "";
+        (
+          modalEditar.querySelector("[name='correo']") as HTMLInputElement
+        ).value = usuario.correo || "";
+        (
+          modalEditar.querySelector("[name='cedula']") as HTMLInputElement
+        ).value = usuario.cedula || "";
+        const fechaNacimiento = usuario.fechanacimiento
+          ? usuario.fechanacimiento.split("T")[0]
+          : ""; // Formato yyyy-mm-dd
+        const fechaExpedicion = usuario.fechaexpedicion
+          ? usuario.fechaexpedicion.split("T")[0]
+          : ""; // Formato yyyy-mm-dd
+
+        (
+          modalEditar.querySelector(
+            "[name='fechaNacimiento']"
+          ) as HTMLInputElement
+        ).value = fechaNacimiento;
+        (
+          modalEditar.querySelector(
+            "[name='fechaExpedicion']"
+          ) as HTMLInputElement
+        ).value = fechaExpedicion;
+
+        const rolSelect = modalEditar.querySelector(
+          "[name='rolId']"
+        ) as HTMLSelectElement;
+        if (rolSelect) {
+          const options = Array.from(rolSelect.options);
+          const rolValue = usuario.rol;
+          const defaultOption = options.find(
+            (option) => option.text === rolValue
+          );
+
+          if (defaultOption) {
+            defaultOption.selected = true;
+          } else {
+            rolSelect.value = "";
+          }
+        }
+        modalEditar.classList.remove("hidden");
+      } catch (error) {
+        console.error("Error al cargar el usuario:", error);
+        alert("Error al cargar los datos del usuario.");
+      }
+    });
+
+  const formEditarUsuario = document.getElementById("formEditarUsuario");
+
+  formEditarUsuario.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const modalEditar = document.getElementById("modalEditar");
+
+    // Captura los valores de los campos del formulario
+    const usuarioData = {
+      usuarioid: (modalEditar.querySelector("[name='id']") as HTMLInputElement)
+        .value,
+      nombre: (modalEditar.querySelector("[name='nombre']") as HTMLInputElement)
+        .value,
+      apellido: (
+        modalEditar.querySelector("[name='apellido']") as HTMLInputElement
+      ).value,
+      correo: (modalEditar.querySelector("[name='correo']") as HTMLInputElement)
+        .value,
+      cedula: (modalEditar.querySelector("[name='cedula']") as HTMLInputElement)
+        .value,
+      fechanacimiento: (
+        modalEditar.querySelector(
+          "[name='fechaNacimiento']"
+        ) as HTMLInputElement
+      ).value,
+      fechaexpedicion: (
+        modalEditar.querySelector(
+          "[name='fechaExpedicion']"
+        ) as HTMLInputElement
+      ).value,
+      contraseña: (
+        modalEditar.querySelector("[name='contraseña']") as HTMLInputElement
+      ).value,
+      rol: (modalEditar.querySelector("[name='rolId']") as HTMLSelectElement)
+        .value,
+    };
+
+    try {
+      const resultado = await uptdateUser(usuarioData);
+
+      if (resultado.success) {
+        alert(resultado.message);
+        modalEditar.classList.add("hidden");
+        location.reload();
+      } else {
+        alert(resultado.error);
+      }
+    } catch (error) {
+      console.error("Error al actualizar usuario:", error);
+      alert("Hubo un error al actualizar el usuario.");
+    }
+  });
+
+  // Cierra el modal al presionar cancelar
+  document
+    .getElementById("cancelarModalEditar")
+    .addEventListener("click", () => {
+      document.getElementById("modalEditar").classList.add("hidden");
+    });
+
+  // accion de btn eliminar
+  document
+    .getElementById("eliminarUsuario")
+    .addEventListener("click", async () => {
+      const selectedCheckbox = document.querySelector(".userCheckbox:checked");
+
+      if (!selectedCheckbox) {
+        alert("Por favor, selecciona un usuario para eliminar.");
+        return;
+      }
+
+      const id = Number(selectedCheckbox.getAttribute("data-id"));
+      console.log(id);
+
+      const confirmDelete = window.confirm(
+        "¿Estás seguro de que deseas eliminar este usuario?"
+      );
+
+      if (!confirmDelete) {
+        return;
+      }
+      try {
+        const response = await deleteUsuario(id);
+
+        if (response.success) {
+          alert("Usuario eliminado con éxito.");
+          location.reload();
+        } else {
+          alert("Hubo un error al eliminar el usuario.");
+        }
+      } catch (error) {
+        console.error("Error al eliminar el usuario:", error);
+        alert("Hubo un error al intentar eliminar el usuario.");
+      }
+    });
+</script>

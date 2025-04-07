@@ -1,0 +1,200 @@
+---
+import { Icon } from "astro-icon/components";
+import { getAllPacientes } from "../logic/servicioPacientes";
+import type { Pacientes } from "../models/pacientes";
+
+const response = await getAllPacientes();
+
+let pacientes: Pacientes[] = [];
+
+if (response.success && Array.isArray(response.data)) {
+  pacientes = response.data.map((paciente) => ({
+    id: paciente.id,
+    nombre_completo: paciente.nombre_completo,
+    fecha_nacimiento: paciente.fecha_nacimiento,
+    sexo: paciente.sexo,
+    documento_identidad: paciente.documento_identidad,
+    telefono_contacto: paciente.telefono_contacto,
+    correo_electronico: paciente.correo_electronico,
+  }));
+} else {
+  console.error("Error: La respuesta no contiene un arreglo válido.", response);
+}
+---
+
+<div
+  class="overflow-x-auto shadow-md sm:rounded-lg h-full bg-[#e9eef6] p-4 pb-2"
+>
+  <div class="flex items-center justify-between">
+    <!-- Contenedor para botones e input -->
+    <div class="flex items-center justify-between w-full">
+      <!-- Botones -->
+      <div class="flex items-center space-x-2">
+        <button
+          id="editarPaciente"
+          class="flex items-center text-black hover:bg-blue-300 p-1 rounded-md"
+        >
+          <Icon
+            name="actualizar"
+            class="w-6 h-6 mr-2 flex items-center text-[#4011ff]"
+          />
+          Actualizar
+        </button>
+        <button
+          id="eliminarPaciente"
+          class="flex items-center text-black hover:bg-red-300 p-1 rounded-md"
+        >
+          <Icon
+            name="eliminar"
+            class="w-6 h-6 mr-2 flex items-center text-[#df4d5e]"
+          />
+          Eliminar
+        </button>
+        <button
+          id="agregarPaciente"
+          class="flex items-center text-black hover:bg-green-300 p-1 rounded-md"
+        >
+          <Icon
+            name="add"
+            class="w-6 h-6 mr-2 flex items-center text-[#29b73a96]"
+          />
+          Agregar
+        </button>
+      </div>
+      <!-- Input -->
+      <div class="relative ml-auto">
+        <div
+          class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+        >
+          <svg
+            class="w-4 h-4 text-gray-500 dark:text-gray-400"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 20 20"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"></path>
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="inputSearchPaciente"
+          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-[#e9eef6] focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Buscar Paciente"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- aqui Inicia la Tabla con la Indectacion de los Pacientes -->
+  <table
+    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 mt-2"
+  >
+    <thead
+      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-green-600 dark:text-white"
+    >
+      <tr>
+        <th scope="col" class="p-4">
+          <Icon name="square" />
+        </th>
+        <th scope="col" class="px-9 py-3">Nombre Completo</th>
+        <th scope="col" class="px-6 py-3">Documento</th>
+        <th scope="col" class="px-6 py-3">Sexo</th>
+        <th scope="col" class="px-6 py-3">Fecha Nacimiento</th>
+        <th scope="col" class="px-6 py-3">Telefono</th>
+        <th scope="col" class="px-6 py-3">Correo</th>
+      </tr>
+    </thead>
+
+    <tbody id="pacienteTable">
+      {
+        pacientes.length > 0 ? (
+          pacientes.map((paciente) => (
+            <tr class=" border-b bg-[#e9eef6] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-400">
+              <td class="w-4 p-4">
+                <input
+                  type="checkbox"
+                  class="form-checkbox userCheckbox"
+                  data-id={paciente.id}
+                />
+              </td>
+              <th
+                scope="row"
+                class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
+              >
+                <div class="ps-3">
+                  <div class="hidden">{paciente.id}</div>
+                  <div class="text-black font-semibold">
+                    {paciente.nombre_completo}
+                  </div>
+                </div>
+              </th>
+              <td class="px-6 py-4 text-black">
+                {paciente.documento_identidad}
+              </td>
+              <td class="px-6 py-4 text-black">{paciente.sexo}</td>
+              <td class="px-6 py-4 text-black">
+                {new Date(paciente.fecha_nacimiento).toLocaleDateString(
+                  "es-ES"
+                )}
+              </td>
+              <td class="px-6 py-4 text-black">{paciente.telefono_contacto}</td>
+              <td class="px-6 py-4 text-black">
+                {paciente.correo_electronico}
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colspan="4" class="px-6 py-4 text-center">
+              No users found.
+            </td>
+          </tr>
+        )
+      }
+    </tbody>
+  </table>
+</div>
+
+<script type="module">
+  let searchQuery = "";
+  const inputSearch = document.getElementById("inputSearchPaciente");
+  const userTable = document.getElementById("pacienteTable");
+
+  function filterProduct() {
+    const search = searchQuery.toLowerCase();
+    const rows = Array.from(userTable.children);
+
+    rows.forEach((row) => {
+      const nombre = row.children[1].textContent.toLowerCase();
+      const documento = row.children[2].textContent.toLowerCase();
+      const sexo = row.children[3].textContent.toLowerCase();
+      const fecha_nacimiento = row.children[4].textContent.toLocaleLowerCase();
+      const telefono = row.children[5].textContent.toLocaleLowerCase();
+      const correo = row.children[6].textContent.toLocaleLowerCase();
+
+      if (
+        nombre.includes(search) ||
+        documento.includes(search) ||
+        sexo.includes(search) ||
+        fecha_nacimiento.includes(search) ||
+        telefono.includes(search) ||
+        correo.includes(search)
+      ) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  }
+
+  inputSearch.addEventListener("input", (event) => {
+    searchQuery = event.target.value;
+    filterProduct();
+  });
+</script>

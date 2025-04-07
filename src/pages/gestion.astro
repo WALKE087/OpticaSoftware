@@ -1,0 +1,55 @@
+---
+import GestionUsuarios from "../components/gestionUsuarios.astro";
+import GestionProductos from "../components/gestionProductos.astro";
+import GestionPacientes from "../components/gestionPacientes.astro";
+import GestionAgendamiento from "../components/gestionAgendamiento.astro";
+import Layout from "../layouts/LayoutAdmin.astro";
+import Sidebar from "../components/UI/sidebar.astro";
+import { protectRoute } from "../db/repositorios/protegerRutas";
+
+const user = await protectRoute(Astro, "1");
+if (!user) {
+  return Astro.redirect("/");
+}
+
+const params = Astro.url.searchParams;
+const view = params.get("view");
+
+let SelectedComponent;
+switch (view) {
+  case "gestion-usuarios":
+    SelectedComponent = GestionUsuarios;
+    break;
+  case "gestion-productos":
+    SelectedComponent = GestionProductos;
+    break;
+  case "gestion-pacientes":
+    SelectedComponent = GestionPacientes;
+    break;
+  case "gestion-agendamiento":
+    SelectedComponent = GestionAgendamiento;
+    break;
+  default:
+    SelectedComponent = GestionUsuarios;
+}
+---
+
+<Layout title="Prueba Gestion">
+  <div class="flex h-full w-full">
+    <section>
+      <Sidebar currentView={view} />
+    </section>
+
+    <main class="p-8 flex-grow">
+      <SelectedComponent />
+    </main>
+  </div>
+</Layout>
+
+<style>
+  main {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+  }
+</style>

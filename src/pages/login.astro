@@ -1,0 +1,163 @@
+---
+import LayoutLogin from "../layouts/LayoutLogin.astro";
+import { SignIn, SignOut } from "auth-astro/components";
+import { getSession } from "auth-astro/server";
+import { validateUserCredentials } from "../logic/servicioUsuarios";
+import { protectRoute } from "../db/repositorios/protegerRutas";
+import { Icon } from "astro-icon/components";
+
+const session = await getSession(Astro.request);
+
+if (session) {
+  return Astro.redirect("/");
+}
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const email = data.get("email") as string;
+    const password = data.get("password") as string;
+
+    const result = await validateUserCredentials(email, password);
+
+    if (result.success) {
+      const token = result.token;
+      const cookie = `token=${token}; HttpOnly; Path=/; Secure; SameSite=Strict; Max-Age=3600`;
+
+      Astro.response.headers.append("Set-Cookie", cookie);
+
+      return new Response(null, {
+        status: 303,
+        headers: {
+          "Set-Cookie": cookie,
+          Location: "/gestion",
+        },
+      });
+    } else {
+      return new Response(result.error || "Autenticación fallida", {
+        status: 401,
+      });
+    }
+  } catch (error) {
+    console.error("Error al procesar la autenticación:", error);
+    return new Response("Error interno al procesar la solicitud", {
+      status: 500,
+    });
+  }
+}
+
+const user = await protectRoute(Astro, "1");
+if (user) {
+  return Astro.redirect("/gestion");
+}
+---
+
+<LayoutLogin>
+  <div class="loginPage flex">
+    <div class="container flex">
+      <div class="videoDiv">
+        <video src="/NuevaOptica.mp4" autoplay muted loop></video>
+
+        <div class="textDiv">
+          <h1 class="title">OPTICA</h1>
+        </div>
+
+        <div class="footerDiv flex">
+          <span class="text-black">Bienvenido a la Mejor Optica.</span>
+          <!-- <button class="btn">Crear Cuenta</button> -->
+        </div>
+      </div>
+
+      <div class="formDiv flex">
+        <form id="empresaForm" class="form grid" method="POST">
+          <div class="inputDiv">
+            <label for="username" class="username">Usuario</label>
+            <div class="input flex">
+              <input
+                placeholder="Ingrese su usuario"
+                type="text"
+                id="username"
+                name="email"
+              />
+            </div>
+          </div>
+
+          <div class="inputDiv">
+            <label for="password" class="password">Contraseña</label>
+            <div class="input flex">
+              <input
+                placeholder="Ingrese su contraseña"
+                type="password"
+                id="password"
+                name="password"
+              />
+            </div>
+          </div>
+          <button type="submit" class="btn flex">
+            <span>Login</span>
+          </button>
+        </form>
+
+        <div
+          id="errorMessage"
+          class="text-red-700 text-center hidden text-sm mt-4"
+        >
+        </div>
+
+        {
+          session ? (
+            <SignOut class="w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-100 transition duration-300 flex items-center justify-center">
+              Cerrar Sesión
+            </SignOut>
+          ) : (
+            <SignIn provider="google" class="">
+              <div class="flex justify-center mt-4">
+                <span class="btn google-btn flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-300">
+                  <Icon name="google" class="text-white w-5 h-5" />
+                  <span>Iniciar sesión con Google</span>
+                </span>
+              </div>
+            </SignIn>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</LayoutLogin>
+
+<script type="module">
+  document.addEventListener("DOMContentLoaded", () => {
+    const empresaForm = document.getElementById("empresaForm");
+    const errorMessage = document.getElementById("errorMessage");
+
+    empresaForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const email = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const response = await fetch(window.location.href, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ email, password }),
+        });
+
+        if (response.ok) {
+          window.location.href = "/gestion";
+        } else {
+          errorMessage.textContent =
+            "Autenticación fallida. Por favor, revise sus credenciales.";
+          errorMessage.classList.remove("hidden");
+        }
+      } catch (error) {
+        console.error("Error durante la autenticación:", error);
+        errorMessage.textContent =
+          "Ocurrió un error inesperado. Inténtelo de nuevo.";
+        errorMessage.classList.remove("hidden");
+      }
+    });
+  });
+</script>

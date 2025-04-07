@@ -1,0 +1,17 @@
+---
+const cookieHeader = Astro.request.headers.get("Cookie");
+
+// debico a que Astro no admite eliminar la cookie directamente por medio del componente se redirije aqui y aqui se elimina la cookie.
+if (cookieHeader && cookieHeader.includes("token")) {
+  return new Response(null, {
+    headers: {
+      "Set-Cookie":
+        "token=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0",
+      Location: "/login",
+    },
+    status: 302,
+  });
+}
+
+return Astro.redirect("/login", 302);
+---

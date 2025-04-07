@@ -1,0 +1,44 @@
+---
+const { currentView } = Astro.props;
+const isActive = (view) => {
+  if (!currentView && view === "gestion-usuarios") return true;
+  return currentView === view;
+};
+---
+
+<aside class="w-64 bg-white shadow-md h-full">
+  <div class="p-4">
+    <h1 class="text-xl font-bold mb-4 text-green-600">Software OptiVision</h1>
+    <nav>
+      <a
+        href="/gestion?view=gestion-usuarios"
+        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
+          ${isActive("gestion-usuarios") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
+        >Gestión Usuarios</a
+      >
+      <a
+        href="/gestion?view=gestion-productos"
+        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
+          ${isActive("gestion-productos") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
+        >Gestión Productos</a
+      >
+      <a
+        href="/gestion?view=gestion-pacientes"
+        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
+          ${isActive("gestion-pacientes") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
+        >Gestión Pacientes</a
+      >
+      <a
+        href="/gestion?view=gestion-agendamiento"
+        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
+          ${isActive("gestion-agendamiento") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
+        >Agendar Citas</a
+      >
+      <a
+        href="/logout"
+        class="block text-black px-4 py-2 mb-1 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+        >🚪 Salir</a
+      >
+    </nav>
+  </div>
+</aside>

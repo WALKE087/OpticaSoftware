@@ -1,11 +1,46 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import LayoutInicio from "../layouts/LayoutInicio.astro";
+import Navbar from "../components/UI/navbar.astro";
+import NuestrasOpticas from "../components/nuestrasOpticas.astro";
+import VentaProductos from "../components/ventaProductos.astro";
+import Filtro from "../components/UI/filtro.astro";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const params = Astro.url.searchParams;
+const view = params.get("view");
+
+let SelectedComponent;
+switch (view) {
+  case "vista-gafas":
+    SelectedComponent = VentaProductos;
+    break;
+  case "nuestras-clinicas":
+    SelectedComponent = NuestrasOpticas;
+    break;
+  default:
+    SelectedComponent = VentaProductos;
+}
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<LayoutInicio title="SoftwareOptico">
+    <section class="fixed top-0 w-full z-50">
+      <Navbar  />
+    </section>
+
+    <div class="mt-16">
+      <div class="flex flex-row p4">
+        <!-- Contenedor principal flex en row -->
+        {view !== "nuestras-clinicas"  &&  (
+          <aside class="p-4">
+            <!-- Sección para filtros -->
+            <Filtro />
+          </aside>
+        )}
+
+        <main>
+          <!-- Sección para contenido -->
+          <slot />
+          <SelectedComponent />
+        </main>
+      </div>
+    </div>
+</LayoutInicio>

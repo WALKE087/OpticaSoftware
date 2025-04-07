@@ -1,0 +1,85 @@
+---
+interface Cliente {
+  id: number;
+  nombre: string;
+  email: string;
+  telefono: string;
+  citas: string[];
+}
+
+const clientes: Cliente[] = [
+  { id: 1, nombre: "Juan Pérez", email: "juan@example.com", telefono: "123-456-7890", citas: ["2023-05-15 10:00", "2023-05-20 15:30"] },
+  { id: 2, nombre: "María García", email: "maria@example.com", telefono: "098-765-4321", citas: ["2023-05-18 11:00"] },
+  { id: 3, nombre: "Carlos Rodríguez", email: "carlos@example.com", telefono: "555-555-5555", citas: [] },
+];
+
+function formatearFecha(fechaString: string): string {
+  const fecha = new Date(fechaString);
+  const opciones: Intl.DateTimeFormatOptions = { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false
+  };
+  return fecha.toLocaleDateString('es-ES', opciones)
+    .replace(/\b(\d{1,2}) de /, '$1 de ')
+    .replace(' a las', ' a las');
+}
+---
+
+  <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <table class="w-full">
+      <thead>
+        <tr class="bg-indigo-100">
+          <th class="px-6 py-3 text-left text-xs font-semibold text-indigo-800 uppercase tracking-wider">Nombre</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-indigo-800 uppercase tracking-wider">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-indigo-800 uppercase tracking-wider">Teléfono</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-indigo-800 uppercase tracking-wider">Citas Agendadas</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-indigo-800 uppercase tracking-wider">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {clientes.map((cliente) => (
+          <tr class="hover:bg-blue-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{cliente.nombre}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{cliente.email}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{cliente.telefono}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {cliente.citas.length > 0 ? (
+                <ul class="list-disc list-inside">
+                  {cliente.citas.map((cita) => (
+                    <li>{formatearFecha(cita)}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span class="text-gray-400 italic">Sin citas agendadas</span>
+              )}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+                data-cliente-id={cliente.id}
+              >
+                Agendar Cita
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const buttons = document.querySelectorAll('button[data-cliente-id]');
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const clienteId = button.getAttribute('data-cliente-id');
+        console.log(`Agendar cita para cliente ID: ${clienteId}`);
+      });
+    });
+  });
+</script>
+
+<style>
+</style>

@@ -1,0 +1,166 @@
+---
+import { Icon } from "astro-icon/components";
+---
+
+<div class="py-8 px-4 md:px-10">
+  <!-- TÍTULO PRINCIPAL -->
+  <h2 class="text-4xl font-bold text-center text-[#11cee0e5] mb-8">
+    Nuestras Ópticas
+  </h2>
+
+  <!-- SECCIÓN DE SERVICIOS -->
+  <section id="sectionService" class="mx-auto">
+    <div
+      class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#F59E0B] mb-10"
+    >
+      <h3
+        class="text-2xl font-bold mb-6 text-[#1E40AF] flex items-center gap-3"
+      >
+        <Icon name="service" class="w-8 h-8 text-[#cd2727]" />
+        Nuestros Servicios
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div class="bg-[#FEF3C7] p-6 rounded-lg text-center shadow">
+          <Icon name="eye" class="w-10 h-10 mx-auto text-[#D97706] mb-3" />
+          <p class="text-[#92400E] font-semibold">Exámenes de vista</p>
+        </div>
+
+        <div class="bg-[#E0F2FE] p-6 rounded-lg text-center shadow">
+          <Icon name="glasses" class="w-10 h-10 mx-auto text-[#0284C7] mb-3" />
+          <p class="text-[#075985] font-semibold">Lentes de contacto</p>
+        </div>
+
+        <div class="bg-[#FCE7F3] p-6 rounded-lg text-center shadow">
+          <Icon name="sun" class="w-10 h-10 mx-auto text-[#DB2777] mb-3" />
+          <p class="text-[#9D174D] font-semibold">Gafas de sol</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN DE ÓPTICAS + CONTACTO -->
+  <section class="mx-auto grid md:grid-cols-2 gap-6">
+    <!-- ÓPTICA 1 -->
+    <div
+      class="bg-white shadow-lg hover:shadow-xl border-t-4 border-[#3B82F6] rounded-xl overflow-hidden"
+    >
+      <div class="bg-[#3B82F6] text-white p-4">
+        <h3 class="text-2xl flex items-center gap-3 font-semibold">
+          <Icon name="eye" class="w-8 h-8 text-[#a72bff]" />
+          OptiVision
+        </h3>
+        <p class="text-[#BFDBFE]">Tu visión, nuestra pasión</p>
+      </div>
+
+      <div class="p-6 relative">
+        <!-- Imagen Placeholder -->
+        <div class="h-48 bg-[#E0E7FF] rounded-md mb-4 relative">
+          <div
+            class="absolute bottom-0 left-0 right-0 bg-[#1E40AF] bg-opacity-90 text-white p-2 text-sm rounded-b-md"
+          >
+            Tecnología de vanguardia para tu salud visual
+          </div>
+        </div>
+
+        <div class="space-y-3 text-[#1E40AF] mb-6">
+          <p class="flex items-center">
+            <Icon name="map-pin" class="w-5 h-5 mr-2 text-[#3B82F6]" /> Avenida Luminosa
+            456, Ciudad Brillante
+          </p>
+          <p class="flex items-center">
+            <Icon name="clock" class="w-5 h-5 mr-2 text-[#3B82F6]" /> Lunes a Sábado:
+            9:00 AM - 8:00 PM
+          </p>
+          <p class="flex items-center">
+            <Icon name="phone" class="w-5 h-5 mr-2 text-[#3B82F6]" /> +1 987 654
+            321
+          </p>
+          <p class="flex items-center">
+            <Icon name="mail" class="w-5 h-5 mr-2 text-[#3B82F6]" /> info@visionclara.com
+          </p>
+        </div>
+
+        <p class="text-[#4B5563] text-sm border-t border-[#E5E7EB] pt-4">
+          En OptiVision, nos dedicamos a proporcionar soluciones visuales
+          innovadoras y personalizadas. Nuestro equipo de expertos optometristas
+          utiliza la tecnología más avanzada para cuidar de tu salud ocular.
+        </p>
+      </div>
+    </div>
+
+    <!-- FORMULARIO DE CONTACTO -->
+    <div
+      class="bg-white shadow-lg hover:shadow-xl border-t-4 border-[#10B981] rounded-xl overflow-hidden"
+    >
+      <div class="bg-[#10B981] text-white p-4">
+        <h3 class="text-2xl flex items-center gap-3 font-semibold">
+          <Icon name="map-pin" class="w-8 h-8 text-[#4531ff]" />
+          Contáctanos
+        </h3>
+        <p class="text-[#D1FAE5]">Estamos aquí para atenderte</p>
+      </div>
+
+      <div class="p-6">
+        <form id="contactForm" class="space-y-4">
+          <div>
+            <label for="nombre" class="block text-[#1E40AF] mb-1">Nombre</label>
+            <input
+              id="nombre"
+              name="nombre"
+              type="text"
+              required
+              class="w-full px-4 py-2 border border-[#10B981] rounded-md focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+            />
+          </div>
+
+          <div>
+            <label for="email" class="block text-[#1E40AF] mb-1">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              class="w-full px-4 py-2 border border-[#10B981] rounded-md focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+            />
+          </div>
+
+          <div>
+            <label for="mensaje" class="block text-[#1E40AF] mb-1"
+              >Mensaje</label
+            >
+            <textarea
+              id="mensaje"
+              name="mensaje"
+              rows="4"
+              required
+              class="w-full px-4 py-2 border border-[#10B981] rounded-md focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-[#10B981] hover:bg-[#059669] text-white py-2 px-4 rounded transition duration-300"
+          >
+            Enviar mensaje
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("contactForm");
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target as HTMLFormElement);
+        const data = Object.fromEntries(formData.entries());
+        console.log("Formulario enviado:", data);
+        alert("Mensaje enviado correctamente.");
+      });
+    }
+  });
+</script>
