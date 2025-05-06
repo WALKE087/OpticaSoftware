@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = import.meta.env.JWT_SECRET;
 
-export async function POST({ request }) {
+export async function POST({ request }: any) {
   try {
     const { email, password } = await request.json();
 

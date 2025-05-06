@@ -1,6 +1,6 @@
 import { db } from "../../db/connect";
 
-export async function DELETE({ request }) {
+export async function DELETE({ request }: any) {
   try {
     // Obtener el ID del producto a eliminar desde el cuerpo de la solicitud
     const { id } = await request.json();
@@ -10,7 +10,7 @@ export async function DELETE({ request }) {
     if (!id || typeof id !== "number") {
       return new Response(
         JSON.stringify({
-          message: "El ID del producto es inválido o no fue proporcionado."
+          message: "El ID del producto es inválido o no fue proporcionado.",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );

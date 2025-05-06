@@ -2,7 +2,7 @@ import { db } from "../../db/connect";
 import type { Usuario } from "../../models/usuarios";
 import bcrypt from "bcryptjs";
 
-export async function POST({ request }) {
+export async function POST({ request }: any) {
   try {
     const usuarioData: Usuario = await request.json();
 
@@ -30,7 +30,7 @@ export async function POST({ request }) {
       usuarioData.fechaExpedicion,
       usuarioData.correo,
       hashedPassword,
-      usuarioData.rolId
+      usuarioData.rolId,
     ];
 
     await db.query(query, values);

@@ -2,7 +2,7 @@ import { db } from "../../db/connect";
 import type { Usuario } from "../../models/usuarios";
 import bcrypt from "bcryptjs";
 
-export async function PUT({ request }) {
+export async function PUT({ request }: any) {
   try {
     const usuarioData = await request.json();
 

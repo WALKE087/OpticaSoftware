@@ -1,6 +1,6 @@
 import { db } from "../../db/connect";
 
-export async function DELETE({ request }) {
+export async function DELETE({ request }: any) {
   try {
     const { id } = await request.json();
     console.log(id);

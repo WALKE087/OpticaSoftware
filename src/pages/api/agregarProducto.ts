@@ -1,7 +1,7 @@
 import { db } from "../../db/connect";
 import type { Gafas } from "../../models/gafas";
 
-export async function POST({ request }) {
+export async function POST({ request }: any) {
   try {
     const productoData: Omit<Gafas, "id"> = await request.json();
 
@@ -19,7 +19,7 @@ export async function POST({ request }) {
       productoData.stock,
       productoData.imagen,
       productoData.tipomontura,
-      productoData.color
+      productoData.color,
     ];
 
     await db.query(query, values);
