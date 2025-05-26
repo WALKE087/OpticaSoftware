@@ -1,5 +1,7 @@
 ---
 const { currentView } = Astro.props;
+console.log("veamos a este Current View:", currentView);
+
 const isActive = (view) => {
   if (!currentView && view === "gestion-usuarios") return true;
   return currentView === view;
