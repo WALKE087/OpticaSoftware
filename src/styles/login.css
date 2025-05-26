@@ -177,16 +177,7 @@ li {
           color: black;
           font-weight: 600;
         }
-        t {
-          font-size: 20px;
-          color: black;
-          font-weight: 600;
-        }
-        pp {
-          font-size: 60px;
-          color: black;
-          font-weight: 700;
-        }
+        
       }
 
       .form {
@@ -303,12 +294,7 @@ li {
             width: 20px;
           }
 
-          t {
-            font-size: 10px;
-          }
-          pp {
-            font-size: 50px;
-          }
+          
         }
         .form {
           gap: 0.5rem;
