@@ -55,103 +55,107 @@ const filterState = {
 <script is:inline>
   document.addEventListener("DOMContentLoaded", (event) => {
     // Configuración inicial
-    const priceRangeInput = document.getElementById("price-range");
-    const minPriceSpan = document.getElementById("min-price");
-    const maxPriceSpan = document.getElementById("max-price");
+    if (!window.location.search.includes("nuestras-clinicas")) {
+      const priceRangeInput = document.getElementById("price-range");
+      const minPriceSpan = document.getElementById("min-price");
+      const maxPriceSpan = document.getElementById("max-price");
 
-    // Estado de los filtros
-    let filterState = {
-      priceRange: 200,
-      selectedBrands: [],
-      selectedFrameTypes: [],
-      selectedColors: [],
-    };
+      // Estado de los filtros
+      let filterState = {
+        priceRange: 200,
+        selectedBrands: [],
+        selectedFrameTypes: [],
+        selectedColors: [],
+      };
 
-    // Actualizar rango de precios
-    function updatePriceRange() {
-      filterState.priceRange = parseInt(priceRangeInput.value);
-      minPriceSpan.textContent = `$0`;
-      maxPriceSpan.textContent = `$${filterState.priceRange}`;
-      applyFilters();
-    }
-
-    // Actualizar filtros de checkbox
-    function updateFilters(filterType, value) {
-      const filterArray =
-        filterType === "brand"
-          ? filterState.selectedBrands
-          : filterType === "frame"
-            ? filterState.selectedFrameTypes
-            : filterState.selectedColors;
-
-      const index = filterArray.indexOf(value);
-      if (index > -1) {
-        filterArray.splice(index, 1);
-      } else {
-        filterArray.push(value);
+      // Actualizar rango de precios
+      function updatePriceRange() {
+        filterState.priceRange = parseInt(priceRangeInput.value);
+        minPriceSpan.textContent = `$0`;
+        maxPriceSpan.textContent = `$${filterState.priceRange}`;
+        applyFilters();
       }
-      applyFilters();
+
+      // Actualizar filtros de checkbox
+      function updateFilters(filterType, value) {
+        const filterArray =
+          filterType === "brand"
+            ? filterState.selectedBrands
+            : filterType === "frame"
+              ? filterState.selectedFrameTypes
+              : filterState.selectedColors;
+
+        const index = filterArray.indexOf(value);
+        if (index > -1) {
+          filterArray.splice(index, 1);
+        } else {
+          filterArray.push(value);
+        }
+        applyFilters();
+      }
+
+      // Aplicar todos los filtros
+      function applyFilters() {
+        const eyeglassesGrid = document.getElementById("eyeglasses-grid");
+        if (!eyeglassesGrid) return;
+
+        const eyeglasses = Array.from(eyeglassesGrid.children);
+
+        eyeglasses.forEach((glasses) => {
+          const price = parseInt(
+            glasses
+              .querySelector(".bg-\\[\\#24c1ffe5\\]")
+              ?.textContent.replace("$", "") || "0"
+          );
+          const brand =
+            glasses
+              .querySelector("p:nth-of-type(1)")
+              ?.textContent.replace("Marca: ", "") || "";
+          const frameType =
+            glasses
+              .querySelector("p:nth-of-type(2)")
+              ?.textContent.replace("Tipo: ", "") || "";
+          const color =
+            glasses
+              .querySelector("p:nth-of-type(3)")
+              ?.textContent.replace("Color: ", "") || "";
+
+          const matchesPrice = price <= filterState.priceRange;
+          const matchesBrand =
+            filterState.selectedBrands.length === 0 ||
+            filterState.selectedBrands.includes(brand);
+          const matchesFrameType =
+            filterState.selectedFrameTypes.length === 0 ||
+            filterState.selectedFrameTypes.includes(frameType);
+          const matchesColor =
+            filterState.selectedColors.length === 0 ||
+            filterState.selectedColors.includes(color);
+
+          glasses.style.display =
+            matchesPrice && matchesBrand && matchesFrameType && matchesColor
+              ? ""
+              : "none";
+        });
+      }
+
+      // Event listeners
+      if (priceRangeInput) {
+        priceRangeInput.addEventListener("input", updatePriceRange);
+      }
+
+      document
+        .querySelectorAll('input[type="checkbox"]')
+        .forEach((checkbox) => {
+          checkbox.addEventListener("change", (e) => {
+            const target = e.target;
+            const filterType = target.id.split("-")[0];
+            const value = target.value;
+            updateFilters(filterType, value);
+          });
+        });
+
+      // Aplicar filtros iniciales
+      updatePriceRange();
     }
-
-    // Aplicar todos los filtros
-    function applyFilters() {
-      const eyeglassesGrid = document.getElementById("eyeglasses-grid");
-      if (!eyeglassesGrid) return;
-
-      const eyeglasses = Array.from(eyeglassesGrid.children);
-
-      eyeglasses.forEach((glasses) => {
-        const price = parseInt(
-          glasses
-            .querySelector(".bg-\\[\\#24c1ffe5\\]")
-            ?.textContent.replace("$", "") || "0"
-        );
-        const brand =
-          glasses
-            .querySelector("p:nth-of-type(1)")
-            ?.textContent.replace("Marca: ", "") || "";
-        const frameType =
-          glasses
-            .querySelector("p:nth-of-type(2)")
-            ?.textContent.replace("Tipo: ", "") || "";
-        const color =
-          glasses
-            .querySelector("p:nth-of-type(3)")
-            ?.textContent.replace("Color: ", "") || "";
-
-        const matchesPrice = price <= filterState.priceRange;
-        const matchesBrand =
-          filterState.selectedBrands.length === 0 ||
-          filterState.selectedBrands.includes(brand);
-        const matchesFrameType =
-          filterState.selectedFrameTypes.length === 0 ||
-          filterState.selectedFrameTypes.includes(frameType);
-        const matchesColor =
-          filterState.selectedColors.length === 0 ||
-          filterState.selectedColors.includes(color);
-
-        glasses.style.display =
-          matchesPrice && matchesBrand && matchesFrameType && matchesColor
-            ? ""
-            : "none";
-      });
-    }
-
-    // Event listeners
-    if (priceRangeInput) {
-      priceRangeInput.addEventListener("input", updatePriceRange);
-    }
-
-    document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-      checkbox.addEventListener("change", (e) => {
-        const target = e.target;
-        const filterType = target.id.split("-")[0];
-        const value = target.value;
-        updateFilters(filterType, value);
-      });
-    });
-
-    // Aplicar filtros iniciales
-    updatePriceRange();
   });
 </script>

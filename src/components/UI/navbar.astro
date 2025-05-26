@@ -24,23 +24,21 @@ const currentView = Astro.url.searchParams.get("view");
 
     <!-- Botón de menú móvil -->
     <button
-      data-collapse-toggle="navbar-user"
+      id="mobile-menu-button"
       type="button"
-      class="md:hidden p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1e293b] rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
-      aria-controls="navbar-user"
-      aria-expanded="false"
+      class="md:hidden inline-flex items-center p-2 text-gray-500 rounded-lg hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
     >
-      <span class="sr-only">Abrir menú</span>
       <svg
         class="w-6 h-6"
         fill="none"
         stroke="currentColor"
-        stroke-width="2"
         viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
       >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
+          stroke-width="2"
           d="M4 6h16M4 12h16M4 18h16"></path>
       </svg>
     </button>
@@ -122,4 +120,55 @@ const currentView = Astro.url.searchParams.get("view");
       }
     </div>
   </div>
+  <!-- Menú móvil (visibilidad controlada con JS) -->
+  <div id="mobile-menu" class="hidden md:hidden px-4 pb-4">
+    <a
+      href="/?view=vista-gafas"
+      class={`block py-2 px-4 text-sm ${
+        currentView === "vista-gafas"
+          ? "bg-[#1a3b78] text-white rounded-2xl"
+          : "text-gray-200 hover:bg-[#3de440e5] hover:text-white rounded-2xl"
+      }`}
+    >
+      Productos
+    </a>
+    <a
+      href="/?view=nuestras-clinicas"
+      class={`block py-2 px-4 text-sm ${
+        currentView === "nuestras-clinicas"
+          ? "bg-[#1a3b78] text-white rounded-2xl"
+          : "text-gray-200 hover:bg-[#3de440e5] hover:text-white rounded-2xl"
+      }`}
+    >
+      Nuestras Ópticas
+    </a>
+    {
+      session && (
+        <a
+          href="#"
+          class="block py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded"
+        >
+          Carrito
+        </a>
+      )
+    }
+  </div>
+
+  <script is:inline>
+    document.addEventListener("DOMContentLoaded", () => {
+      const menuButton = document.getElementById("mobile-menu-button");
+      const mobileMenu = document.getElementById("mobile-menu");
+
+      menuButton?.addEventListener("click", () => {
+        mobileMenu.classList.toggle("hidden");
+      });
+
+      // Cierra el menú móvil al hacer clic en un enlace
+      mobileMenu.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => {
+          mobileMenu.classList.add("hidden");
+        });
+      });
+    });
+  </script>
 </nav>
