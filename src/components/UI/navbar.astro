@@ -93,9 +93,14 @@ const currentView = Astro.url.searchParams.get("view");
         session ? (
           <>
             <SignOut id="google-signin-button">
-              <button class="px-4 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-md hover:shadow-lg transition duration-200">
+              <span
+                class="px-3 py-1.5 rounded-full border-2 border-cyan-500 text-cyan-500 font-medium text-sm
+                        bg-transparent transition-colors duration-300
+                        hover:bg-gradient-to-r hover:from-cyan-500 hover:to-blue-500 hover:text-white
+                        focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:focus:ring-cyan-700"
+              >
                 Cerrar Sesión
-              </button>
+              </span>
             </SignOut>
             <div class="relative w-10 h-10 rounded-full ring-2 ring-cyan-500 hover:ring-cyan-400 transition duration-200 overflow-hidden">
               <img

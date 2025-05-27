@@ -8,8 +8,7 @@ const colors = ["Black", "Gold", "Silver", "Tortoise", "Crystal", "Havana"];
 
 <!-- Sidebar with filters -->
 <aside
-  class="w-64 bg-white p-6 shadow-lg rounded-r-none rounded-bl-md max-h-px sm:rounded-lg"
-  style="max-height: 840px;"
+  class="hidden [@media(min-width:800px)]:block w-64 bg-white p-6 shadow-lg rounded-r-none rounded-bl-md sm:rounded-lg"
 >
   <h2 class="text-2xl font-bold mb-6 text-[#3de440e5] flex items-center">
     <Icon name="glasses" class="w-6 h-6 mr-2" />
@@ -17,100 +16,85 @@ const colors = ["Black", "Gold", "Silver", "Tortoise", "Crystal", "Havana"];
   </h2>
   <div class="space-y-6">
     <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
-      <label
-        for="price-range"
-        class="text-[#3de440e5] font-semibold flex items-center mb-2"
-      >
-        <Icon name="dollar-sign" class="w-5 h-5 mr-2" />
-        Rango de Precio
-      </label>
-      <input
-        type="range"
-        id="price-range"
-        min="0"
-        max="400"
-        step="10"
-        value="200"
-        class="w-full h-2 bg-[#3de440e5] rounded-lg appearance-none cursor-pointer"
-      />
-      <div class="flex justify-between text-sm text-gray-600 mt-2">
-        <span id="min-price">$0</span>
-        <span id="max-price">$400</span>
+      <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
+        <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
+          <Icon name="square" class="w-5 h-5 mr-2" />
+          Marca
+        </label>
+        <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
+          {
+            brands.map((brand) => (
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`brand-${brand}`}
+                  value={brand}
+                  class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
+                />
+                <label
+                  for={`brand-${brand}`}
+                  class="ml-2 text-sm text-gray-700"
+                >
+                  {brand}
+                </label>
+              </div>
+            ))
+          }
+        </div>
       </div>
-    </div>
 
-    <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
-      <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
-        <Icon name="square" class="w-5 h-5 mr-2" />
-        Marca
-      </label>
-      <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
-        {
-          brands.map((brand) => (
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                id={`brand-${brand}`}
-                value={brand}
-                class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
-              />
-              <label for={`brand-${brand}`} class="ml-2 text-sm text-gray-700">
-                {brand}
-              </label>
-            </div>
-          ))
-        }
+      <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
+        <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
+          <Icon name="glasses" class="w-5 h-5 mr-2" />
+          Tipo de Montura
+        </label>
+        <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
+          {
+            frameTypes.map((frameType) => (
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`frame-${frameType}`}
+                  value={frameType}
+                  class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
+                />
+                <label
+                  for={`frame-${frameType}`}
+                  class="ml-2 text-sm text-gray-700"
+                >
+                  {frameType}
+                </label>
+              </div>
+            ))
+          }
+        </div>
       </div>
-    </div>
 
-    <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
-      <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
-        <Icon name="glasses" class="w-5 h-5 mr-2" />
-        Tipo de Montura
-      </label>
-      <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
-        {
-          frameTypes.map((frameType) => (
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                id={`frame-${frameType}`}
-                value={frameType}
-                class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
-              />
-              <label
-                for={`frame-${frameType}`}
-                class="ml-2 text-sm text-gray-700"
-              >
-                {frameType}
-              </label>
-            </div>
-          ))
-        }
-      </div>
-    </div>
-
-    <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
-      <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
-        <Icon name="palette" class="w-5 h-5 mr-2" />
-        Color
-      </label>
-      <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
-        {
-          colors.map((color) => (
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                id={`color-${color}`}
-                value={color}
-                class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
-              />
-              <label for={`color-${color}`} class="ml-2 text-sm text-gray-700">
-                {color}
-              </label>
-            </div>
-          ))
-        }
+      <div class="bg-[#f0fff0] p-4 rounded-xl shadow-inner">
+        <label class="text-[#3de440e5] font-semibold flex items-center mb-2">
+          <Icon name="palette" class="w-5 h-5 mr-2" />
+          Color
+        </label>
+        <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
+          {
+            colors.map((color) => (
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`color-${color}`}
+                  value={color}
+                  class="form-checkbox h-4 w-4 text-[#3de440e5] rounded border-gray-300 focus:ring-[#3de440e5]"
+                />
+                <label
+                  for={`color-${color}`}
+                  class="ml-2 text-sm text-gray-700"
+                >
+                  {color}
+                </label>
+              </div>
+            ))
+          }
+        </div>
       </div>
     </div>
   </div>

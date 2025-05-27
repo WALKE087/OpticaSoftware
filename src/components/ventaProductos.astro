@@ -23,32 +23,36 @@ if (response.success && Array.isArray(response.data)) {
 ---
 
 <!-- Main content area -->
-<section class="flex flex-col p-4">
+<section class="flex flex-col sm:p-4 m-2 p-4">
   <div
-    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6"
+    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
     id="eyeglasses-grid"
   >
     {
       gafas.map((glasses) => (
-        <div class="bg-white overflow-hidden border-2 border-[#24c1ffe5] rounded-xl hover:shadow-2xl transition-shadow duration-300">
+        <div class="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 flex flex-col">
           <div class="relative">
             <img
               src={glasses.imagen}
               alt={glasses.nombre}
-              class="w-full h-28 object-cover"
+              class="w-full h-32 sm:h-36 object-cover rounded-t-2xl"
             />
-            <div class="absolute top-0 right-0 bg-[#24c1ffe5] text-black px-1 py-1 rounded-bl-lg text-xs">
+            <div class="absolute top-2 right-2 bg-cyan-400 text-white text-xs px-2 py-1 rounded-lg shadow-sm">
               ${glasses.precio}
             </div>
           </div>
-          <div class="p-3">
-            <h3 class="text-base font-semibold text-black">{glasses.nombre}</h3>
-            <p class="text-sm text-gray-800">Marca: {glasses.marca}</p>
-            <p class="text-sm text-gray-800">Tipo: {glasses.tipomontura}</p>
-            <p class="text-sm text-gray-800">Color: {glasses.color}</p>
+          <div class="flex-1 p-3 flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-gray-800 mb-1">
+                {glasses.nombre}
+              </h3>
+              <p class="text-xs text-gray-600">Marca: {glasses.marca}</p>
+              <p class="text-xs text-gray-600">Tipo: {glasses.tipomontura}</p>
+              <p class="text-xs text-gray-600">Color: {glasses.color}</p>
+            </div>
           </div>
-          <div class="p-2">
-            <button class="w-full bg-[#13ebffe5] hover:bg-[#3fc9ffba] text-black transition-colors duration-300 py-1 px-2 rounded">
+          <div class="p-3">
+            <button class="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-semibold transition duration-300 py-1.5 rounded-lg">
               Añadir al Carrito
             </button>
           </div>

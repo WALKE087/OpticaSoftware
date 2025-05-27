@@ -133,8 +133,23 @@ if (user) {
     empresaForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const email = document.getElementById("username").value;
+      const email = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value;
+
+      // Validaciones de entrada
+      if (!email || !email.includes("@") || !email.includes(".")) {
+        errorMessage.textContent =
+          "Por favor ingrese un correo válido que contenga '@' y '.'.";
+        errorMessage.classList.remove("hidden");
+        return;
+      }
+
+      if (!password || password.length < 8 || password.length > 12) {
+        errorMessage.textContent =
+          "La contraseña debe tener entre 8 y 12 caracteres.";
+        errorMessage.classList.remove("hidden");
+        return;
+      }
 
       try {
         const response = await fetch(window.location.href, {

@@ -4,6 +4,7 @@ import Navbar from "../components/UI/navbar.astro";
 import NuestrasOpticas from "../components/nuestrasOpticas.astro";
 import VentaProductos from "../components/ventaProductos.astro";
 import Filtro from "../components/UI/filtro.astro";
+import Filtrotelefono from "../components/UI/filtrotelefono.astro";
 
 const params = Astro.url.searchParams;
 const view = params.get("view");
@@ -22,7 +23,6 @@ switch (view) {
 
 // Estado inicial de los filtros
 const filterState = {
-  priceRange: 200,
   selectedBrands: [],
   selectedFrameTypes: [],
   selectedColors: [],
@@ -38,15 +38,16 @@ const filterState = {
     <div class="flex flex-row p4">
       {
         view !== "nuestras-clinicas" && (
-          <aside class="p-4">
-            <Filtro client:load />
+          <aside class="">
+            <Filtro />
           </aside>
         )
       }
 
       <main>
         <slot />
-        <SelectedComponent client:load />
+        <SelectedComponent />
+        <Filtrotelefono />
       </main>
     </div>
   </div>
@@ -56,10 +57,21 @@ const filterState = {
   document.addEventListener("DOMContentLoaded", (event) => {
     // Configuración inicial
     if (!window.location.search.includes("nuestras-clinicas")) {
-      const priceRangeInput = document.getElementById("price-range");
       const minPriceSpan = document.getElementById("min-price");
       const maxPriceSpan = document.getElementById("max-price");
+      const openBtn = document.getElementById("open-filter");
+      const modal = document.getElementById("filter-modal");
+      const closeBtn = document.getElementById("close-filter");
 
+      if (openBtn && modal && closeBtn) {
+        openBtn.addEventListener("click", () => {
+          modal.classList.remove("hidden");
+        });
+
+        closeBtn.addEventListener("click", () => {
+          modal.classList.add("hidden");
+        });
+      }
       // Estado de los filtros
       let filterState = {
         priceRange: 200,
@@ -67,15 +79,6 @@ const filterState = {
         selectedFrameTypes: [],
         selectedColors: [],
       };
-
-      // Actualizar rango de precios
-      function updatePriceRange() {
-        filterState.priceRange = parseInt(priceRangeInput.value);
-        minPriceSpan.textContent = `$0`;
-        maxPriceSpan.textContent = `$${filterState.priceRange}`;
-        applyFilters();
-      }
-
       // Actualizar filtros de checkbox
       function updateFilters(filterType, value) {
         const filterArray =
@@ -138,11 +141,6 @@ const filterState = {
         });
       }
 
-      // Event listeners
-      if (priceRangeInput) {
-        priceRangeInput.addEventListener("input", updatePriceRange);
-      }
-
       document
         .querySelectorAll('input[type="checkbox"]')
         .forEach((checkbox) => {
@@ -155,7 +153,6 @@ const filterState = {
         });
 
       // Aplicar filtros iniciales
-      updatePriceRange();
     }
   });
 </script>

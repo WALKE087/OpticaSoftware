@@ -1,0 +1,128 @@
+---
+import { Icon } from "astro-icon/components";
+
+const params = Astro.url.searchParams;
+const view = params.get("view");
+
+const brands = ["RayBan", "Oakley", "Persol", "Warby Parker", "Tom Ford"];
+const frameTypes = ["Full Rim", "Half Rim", "Rimless", "Browline"];
+const colors = ["Black", "Gold", "Silver", "Tortoise", "Crystal", "Havana"];
+---
+
+{
+          view === "nuestras-clinicas" ? (
+            </>
+          <h3></h3>
+          </>
+          ):(
+            <button
+          id="open-filter"
+          class="fixed bottom-6 right-6 z-50 bg-[#1f64e5] p-3 rounded-full shadow-lg block md:hidden"
+          >
+          <Icon name="filtro" class="w-6 h-6" />
+          <span class="sr-only">Abrir Filtros</span>
+        </button>
+
+        <div
+          id="filter-modal"
+          class="fixed inset-0 backdrop-blur-2xl bg-opacity-50 z-50 flex justify-center items-center hidden h-full"
+        >
+          <div class="bg-white w-11/12 overflow-y-auto rounded-lg p-4 relative">
+            <button
+              id="close-filter"
+              class="absolute top-3 right-3 text-gray-600 hover:text-black"
+            >
+              <Icon name="salir" class="w-6 h-6" />
+            </button>
+
+            <h2
+              class="text-2xl font-bold text-[#3de440] mb-4 flex items-center"
+            >
+              <Icon name="glasses" class="w-6 h-6 mr-2" />
+              Filtros
+            </h2>
+
+            <div class="mb-6 p-4 rounded-lg bg-[#f0fff0] shadow">
+              <label class="block text-[#3de440] font-semibold mb-2">
+                <Icon name="square" class="inline w-5 h-5 mr-1" />
+                Marca
+              </label>
+              <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
+                {
+                  brands.map((brand) => (
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`brand-${brand}`}
+                        value={brand}
+                        class="form-checkbox accent-[#3de440]"
+                      />
+                      <label
+                        for={`brand-${brand}`}
+                        class="text-sm text-gray-700"
+                      >
+                        {brand}
+                      </label>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            <div class="mb-6 p-4 rounded-lg bg-[#f0fff0] shadow">
+              <label class="block text-[#3de440] font-semibold mb-2">
+                <Icon name="glasses" class="inline w-5 h-5 mr-1" />
+                Tipo de Montura
+              </label>
+              <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
+                {
+                  frameTypes.map((type) => (
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`frame-${type}`}
+                        value={type}
+                        class="form-checkbox accent-[#3de440]"
+                      />
+                      <label
+                        for={`frame-${type}`}
+                        class="text-sm text-gray-700"
+                      >
+                        {type}
+                      </label>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            <div class="mb-6 p-4 rounded-lg bg-[#f0fff0] shadow">
+              <label class="block text-[#3de440] font-semibold mb-2">
+                <Icon name="palette" class="inline w-5 h-5 mr-1" />
+                Color
+              </label>
+              <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
+                {
+                  colors.map((color) => (
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`color-${color}`}
+                        value={color}
+                        class="form-checkbox accent-[#3de440]"
+                      />
+                      <label
+                        for={`color-${color}`}
+                        class="text-sm text-gray-700"
+                      >
+                        {color}
+                      </label>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+          )
+        }

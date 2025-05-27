@@ -1,46 +1,94 @@
 ---
-const { currentView } = Astro.props;
-console.log("veamos a este Current View:", currentView);
+import { Icon } from "astro-icon/components";
 
+const { currentView } = Astro.props;
 const isActive = (view) => {
   if (!currentView && view === "gestion-usuarios") return true;
   return currentView === view;
 };
 ---
 
-<aside class="w-64 bg-white shadow-md h-full">
-  <div class="p-4">
-    <h1 class="text-xl font-bold mb-4 text-green-600">Software OptiVision</h1>
-    <nav>
-      <a
-        href="/gestion?view=gestion-usuarios"
-        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
-          ${isActive("gestion-usuarios") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
-        >Gestión Usuarios</a
+<div class="flex flex-col bg-gray-50 text-gray-800 font-sans w-64">
+  <div
+    class="fixed flex flex-col top-0 left-0 w-64 bg-white h-full border-r shadow-sm"
+  >
+    <div class="bg-gray-950 flex items-center justify-center h-16 border-b">
+      <h1
+        class="text-3xl sm:text-4xl md:text-4xl font-extrabold text-white tracking-tight text-center uppercase drop-shadow-md"
       >
-      <a
-        href="/gestion?view=gestion-productos"
-        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
-          ${isActive("gestion-productos") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
-        >Gestión Productos</a
-      >
-      <a
-        href="/gestion?view=gestion-pacientes"
-        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
-          ${isActive("gestion-pacientes") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
-        >Gestión Pacientes</a
-      >
-      <a
-        href="/gestion?view=gestion-agendamiento"
-        class={`block px-4 py-2 mb-1 rounded-lg transition-colors duration-200 
-          ${isActive("gestion-agendamiento") ? "bg-green-100 text-green-600 font-semibold" : "text-black hover:bg-gray-100"}`}
-        >Agendar Citas</a
-      >
-      <a
-        href="/logout"
-        class="block text-black px-4 py-2 mb-1 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-        >🚪 Salir</a
-      >
-    </nav>
+        Opti<span class="text-blue-800">Vision</span>
+      </h1>
+    </div>
+    <div class="overflow-y-auto overflow-x-hidden flex-grow px-2 py-4">
+      <ul class="space-y-1">
+        <!-- Sección: Gestión -->
+        <li
+          class="px-4 text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2"
+        >
+          Gestión
+        </li>
+
+        <li>
+          <a
+            href="/gestion?view=gestion-usuarios"
+            class={`flex items-center gap-3 h-11 px-4 rounded-lg text-sm font-medium transition 
+            ${isActive("gestion-usuarios") ? "bg-blue-200 text-blue-900 font-semibold" : "text-black hover:bg-gray-100"}`}
+          >
+            <Icon name="profile" class="w-5 h-5 text-gray-900" />
+            Usuarios
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/gestion?view=gestion-productos"
+            class={`flex items-center gap-3 h-11 px-4 rounded-lg text-sm font-medium transition 
+            ${isActive("gestion-productos") ? "bg-blue-200 text-blue-900 font-semibold" : "text-black hover:bg-gray-100"}`}
+          >
+            <Icon name="box" class="w-5 h-5 text-gray-900" />
+            Productos
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/gestion?view=gestion-pacientes"
+            class={`flex items-center gap-3 h-11 px-4 rounded-lg text-sm font-medium transition 
+            ${isActive("gestion-pacientes") ? "bg-blue-200 text-blue-900 font-semibold" : "text-black hover:bg-gray-100"}`}
+          >
+            <Icon name="users" class="w-5 h-5 text-gray-900" />
+            Pacientes
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="/gestion?view=gestion-agendamiento"
+            class={`flex items-center gap-3 h-11 px-4 rounded-lg text-sm font-medium transition 
+            ${isActive("gestion-agendamiento") ? "bg-blue-200 text-blue-900 font-semibold" : "text-black hover:bg-gray-100"}`}
+          >
+            <Icon name="calendar" class="w-5 h-5 text-gray-900" />
+            Agendar Citas
+          </a>
+        </li>
+
+        <!-- Sección: Sesión -->
+        <li
+          class="px-4 mt-4 text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2"
+        >
+          Sesión
+        </li>
+
+        <li>
+          <a
+            href="/logout"
+            class="flex items-center gap-3 h-11 px-4 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition"
+          >
+            <Icon name="salir" class="w-5 h-5 text-red-500" />
+            Salir
+          </a>
+        </li>
+      </ul>
+    </div>
   </div>
-</aside>
+</div>
