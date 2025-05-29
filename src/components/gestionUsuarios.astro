@@ -167,9 +167,9 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
 <!-- Modal para agregar usuario -->
 <div
   id="modalAgregar"
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+  class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs hidden"
 >
-  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl border-2">
     <h3 class="text-xl font-semibold mb-6 text-black text-center">
       Agregar Usuario
     </h3>
@@ -302,9 +302,9 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
 <!-- Modal para editar usuario -->
 <div
   id="modalEditar"
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+  class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs hidden"
 >
-  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl border-2">
     <h3 class="text-xl font-semibold mb-6 text-black text-center">
       EditarUsuario
     </h3>
@@ -485,6 +485,7 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
     getAllUsuarios,
     uptdateUser,
   } from "../logic/servicioUsuarios";
+
   document
     .getElementById("formAgregarUsuario")
     .addEventListener("submit", async (event) => {
@@ -492,27 +493,123 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
       const form = event.target as HTMLFormElement;
       const formData = new FormData(form);
 
-      // aqui se realiza el guardado de usuario
+      const correo = formData.get("correo") as string;
+      const contraseña = formData.get("contraseña") as string;
+      const cedula = formData.get("cedula") as string;
+      const nombre = formData.get("nombre") as string;
+      const segundoNombre = formData.get("segundoNombre") as string;
+      const apellido = formData.get("apellido") as string;
+      const segundoApellido = formData.get("segundoApellido") as string;
+      const fechaNacimientoStr = formData.get("fechaNacimiento") as string;
+      const fechaExpedicionStr = formData.get("fechaExpedicion") as string;
+      const rolId = formData.get("rolId");
+
+      if (!correo || !correo.includes("@") || !correo.includes(".")) {
+        alert(
+          "Por favor ingrese un correo electrónico válido (debe contener @ y .)"
+        );
+        return;
+      }
+
+      if (!contraseña || contraseña.length < 8 || contraseña.length > 12) {
+        alert("La contraseña debe tener entre 8 y 12 caracteres");
+        return;
+      }
+
+      if (!nombre || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,50}$/.test(nombre)) {
+        alert(
+          "El nombre debe contener solo letras y tener hasta 50 caracteres."
+        );
+        return;
+      }
+
+      if (
+        segundoNombre &&
+        !/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,50}$/.test(segundoNombre)
+      ) {
+        alert(
+          "El segundo nombre debe contener solo letras y tener hasta 50 caracteres."
+        );
+        return;
+      }
+
+      if (!apellido || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,50}$/.test(apellido)) {
+        alert(
+          "El apellido debe contener solo letras y tener hasta 50 caracteres."
+        );
+        return;
+      }
+
+      if (
+        segundoApellido &&
+        !/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{1,50}$/.test(segundoApellido)
+      ) {
+        alert(
+          "El segundo apellido debe contener solo letras y tener hasta 50 caracteres."
+        );
+        return;
+      }
+
+      if (!cedula || !/^[0-9]{6,12}$/.test(cedula)) {
+        alert(
+          "Por favor ingrese una cédula válida (solo números, 6-12 dígitos)"
+        );
+        return;
+      }
+
+      const hoy = new Date();
+      const fechaNacimiento = new Date(fechaNacimientoStr);
+      const fechaExpedicion = new Date(fechaExpedicionStr);
+
+      if (
+        !fechaNacimientoStr ||
+        isNaN(fechaNacimiento.getTime()) ||
+        fechaNacimiento >= hoy
+      ) {
+        alert(
+          "La fecha de nacimiento debe ser una fecha válida y anterior a la fecha actual."
+        );
+        return;
+      }
+
+      if (
+        !fechaExpedicionStr ||
+        isNaN(fechaExpedicion.getTime()) ||
+        fechaExpedicion >= hoy
+      ) {
+        alert(
+          "La fecha de expedición debe ser una fecha válida y anterior a la fecha actual."
+        );
+        return;
+      }
+
+      if (fechaExpedicion < fechaNacimiento) {
+        alert(
+          "La fecha de expedición no puede ser anterior a la fecha de nacimiento."
+        );
+        return;
+      }
+
+      if (!rolId || rolId === "0") {
+        alert("Por favor seleccione un rol válido.");
+        return;
+      }
+
       const usuarioData = {
-        nombre: formData.get("nombre") as string,
-        segundoNombre: formData.get("segundoNombre")
-          ? (formData.get("segundoNombre") as string)
-          : undefined,
-        apellido: formData.get("apellido") as string,
-        segundoApellido: formData.get("segundoApellido")
-          ? (formData.get("segundoApellido") as string)
-          : undefined,
-        cedula: formData.get("cedula") as string,
-        fechaNacimiento: new Date(formData.get("fechaNacimiento") as string),
-        fechaExpedicion: new Date(formData.get("fechaExpedicion") as string),
-        correo: formData.get("correo") as string,
-        contraseña: formData.get("contraseña") as string,
-        rolId: Number(formData.get("rolId")),
+        nombre,
+        segundoNombre: segundoNombre || undefined,
+        apellido,
+        segundoApellido: segundoApellido || undefined,
+        cedula,
+        fechaNacimiento,
+        fechaExpedicion,
+        correo,
+        contraseña,
+        rolId: Number(rolId),
       };
 
       try {
         const response = await addUsuario(usuarioData);
-
         if (response.success) {
           alert("Usuario agregado exitosamente");
           window.location.reload();
@@ -558,6 +655,7 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
         Array.from(userCheckboxes).some((checkbox) => checkbox.checked);
     });
   });
+
   // edit usuario
   document
     .getElementById("editarUsuario")
@@ -593,7 +691,6 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
         }
         const modalEditar = document.getElementById("modalEditar");
 
-        // Llena los campos del formulario en el modal de edición
         (modalEditar.querySelector("[name='id']") as HTMLInputElement).value =
           usuario.usuarioid || "";
         (
@@ -608,12 +705,13 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
         (
           modalEditar.querySelector("[name='cedula']") as HTMLInputElement
         ).value = usuario.cedula || "";
+
         const fechaNacimiento = usuario.fechanacimiento
           ? usuario.fechanacimiento.split("T")[0]
-          : ""; // Formato yyyy-mm-dd
+          : "";
         const fechaExpedicion = usuario.fechaexpedicion
           ? usuario.fechaexpedicion.split("T")[0]
-          : ""; // Formato yyyy-mm-dd
+          : "";
 
         (
           modalEditar.querySelector(
@@ -653,37 +751,105 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
 
   formEditarUsuario.addEventListener("submit", async (event) => {
     event.preventDefault();
-
     const modalEditar = document.getElementById("modalEditar");
 
-    // Captura los valores de los campos del formulario
-    const usuarioData = {
-      usuarioid: (modalEditar.querySelector("[name='id']") as HTMLInputElement)
-        .value,
-      nombre: (modalEditar.querySelector("[name='nombre']") as HTMLInputElement)
-        .value,
-      apellido: (
-        modalEditar.querySelector("[name='apellido']") as HTMLInputElement
-      ).value,
-      correo: (modalEditar.querySelector("[name='correo']") as HTMLInputElement)
-        .value,
-      cedula: (modalEditar.querySelector("[name='cedula']") as HTMLInputElement)
-        .value,
-      fechanacimiento: (
+    const id = (modalEditar.querySelector("[name='id']") as HTMLInputElement)
+      .value;
+    const nombre = (
+      modalEditar.querySelector("[name='nombre']") as HTMLInputElement
+    ).value;
+    const apellido = (
+      modalEditar.querySelector("[name='apellido']") as HTMLInputElement
+    ).value;
+    const correo = (
+      modalEditar.querySelector("[name='correo']") as HTMLInputElement
+    ).value;
+    const cedula = (
+      modalEditar.querySelector("[name='cedula']") as HTMLInputElement
+    ).value;
+    const fechaNacimiento = new Date(
+      (
         modalEditar.querySelector(
           "[name='fechaNacimiento']"
         ) as HTMLInputElement
-      ).value,
-      fechaexpedicion: (
+      ).value
+    );
+    const fechaExpedicion = new Date(
+      (
         modalEditar.querySelector(
           "[name='fechaExpedicion']"
         ) as HTMLInputElement
-      ).value,
-      contraseña: (
-        modalEditar.querySelector("[name='contraseña']") as HTMLInputElement
-      ).value,
-      rol: (modalEditar.querySelector("[name='rolId']") as HTMLSelectElement)
-        .value,
+      ).value
+    );
+    const contraseña = (
+      modalEditar.querySelector("[name='contraseña']") as HTMLInputElement
+    ).value;
+    const rolId = (
+      modalEditar.querySelector("[name='rolId']") as HTMLSelectElement
+    ).value;
+
+    if (!nombre || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre)) {
+      alert("Por favor ingrese un nombre válido (solo letras y espacios)");
+      return;
+    }
+
+    if (!apellido || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellido)) {
+      alert("Por favor ingrese un apellido válido (solo letras y espacios)");
+      return;
+    }
+
+    if (!correo || !correo.includes("@") || !correo.includes(".")) {
+      alert(
+        "Por favor ingrese un correo electrónico válido (debe contener @ y .)"
+      );
+      return;
+    }
+
+    if (contraseña && (contraseña.length < 8 || contraseña.length > 12)) {
+      alert(
+        "La contraseña debe tener entre 8 y 12 caracteres (o dejarla vacía para no cambiar)"
+      );
+      return;
+    }
+
+    if (!cedula || !/^[0-9]{6,12}$/.test(cedula)) {
+      alert("Por favor ingrese una cédula válida (solo números, 6-12 dígitos)");
+      return;
+    }
+
+    const hoy = new Date();
+    if (fechaNacimiento >= hoy) {
+      alert("La fecha de nacimiento debe ser anterior a la fecha actual");
+      return;
+    }
+
+    if (fechaExpedicion >= hoy) {
+      alert("La fecha de expedición debe ser anterior a la fecha actual");
+      return;
+    }
+
+    if (fechaExpedicion < fechaNacimiento) {
+      alert(
+        "La fecha de expedición no puede ser anterior a la fecha de nacimiento"
+      );
+      return;
+    }
+
+    if (!rolId) {
+      alert("Por favor seleccione un rol válido");
+      return;
+    }
+
+    const usuarioData = {
+      usuarioid: id,
+      nombre: nombre,
+      apellido: apellido,
+      correo: correo,
+      cedula: cedula,
+      fechanacimiento: fechaNacimiento.toISOString().split("T")[0],
+      fechaexpedicion: fechaExpedicion.toISOString().split("T")[0],
+      contraseña: contraseña || undefined,
+      rol: rolId,
     };
 
     try {
@@ -694,11 +860,11 @@ if (responseRol.success && Array.isArray(responseRol.data)) {
         modalEditar.classList.add("hidden");
         location.reload();
       } else {
-        alert(resultado.error);
+        alert(resultado.error || "Error al actualizar el usuario");
       }
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
-      alert("Hubo un error al actualizar el usuario.");
+      alert("Hubo un error inesperado al actualizar el usuario.");
     }
   });
 

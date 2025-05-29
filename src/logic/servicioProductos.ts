@@ -1,7 +1,8 @@
 import {
   agregarProducto,
   eliminarProducto,
-  obtenerProductos
+  obtenerProductos,
+  updateProduct,
 } from "../db/repositorios/repositorioProductos";
 import type { Gafas } from "../models/gafas";
 
@@ -17,6 +18,10 @@ export async function getAllProducts() {
 
 export async function addProducts(productoData: Gafas) {
   try {
+    if (!productoData.imagen) {
+      throw new Error("La imagen del producto es requerida");
+    }
+
     const response = await agregarProducto(productoData);
     return response;
   } catch (error) {
@@ -30,6 +35,16 @@ export async function deleteProducto(id: number) {
     return response;
   } catch (error) {
     console.error("Error al eliminar el producto: ", error);
+    return { success: false, error: error.message || "Error desconocido." };
+  }
+}
+
+export async function updateProducto(productoData: Gafas) {
+  try {
+    const response = await updateProduct(productoData);
+    return response;
+  } catch (error) {
+    console.error("Error al actualizar el producto: ", error);
     return { success: false, error: error.message || "Error desconocido." };
   }
 }

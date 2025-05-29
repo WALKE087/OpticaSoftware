@@ -27,9 +27,7 @@ if (response.success && Array.isArray(response.data)) {
   class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-[#e9eef6] p-4 pb-2"
 >
   <div class="flex items-center justify-between">
-    <!-- Contenedor para botones e input -->
     <div class="flex items-center justify-between w-full">
-      <!-- Botones -->
       <div class="flex items-center space-x-2">
         <button
           id="editarProducto"
@@ -62,7 +60,6 @@ if (response.success && Array.isArray(response.data)) {
           Agregar
         </button>
       </div>
-      <!-- Input -->
       <div class="relative ml-auto">
         <div
           class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
@@ -92,7 +89,6 @@ if (response.success && Array.isArray(response.data)) {
     </div>
   </div>
 
-  <!-- aqui Inicia la Tabla con la Indectacion de los Productos -->
   <table
     class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 mt-2"
   >
@@ -109,6 +105,7 @@ if (response.success && Array.isArray(response.data)) {
         <th scope="col" class="px-6 py-3">Stock</th>
         <th scope="col" class="px-6 py-3">Montura</th>
         <th scope="col" class="px-6 py-3">Color</th>
+        <th scope="col" class="px-6 py-3">Imagen</th>
       </tr>
     </thead>
 
@@ -122,6 +119,13 @@ if (response.success && Array.isArray(response.data)) {
                   type="checkbox"
                   class="form-checkbox userCheckbox"
                   data-id={Gafas.id}
+                  data-nombre={Gafas.nombre}
+                  data-marca={Gafas.marca}
+                  data-precio={Gafas.precio}
+                  data-stock={Gafas.stock}
+                  data-imagen={Gafas.imagen}
+                  data-tipomontura={Gafas.tipomontura}
+                  data-color={Gafas.color}
                 />
               </td>
               <th
@@ -138,6 +142,19 @@ if (response.success && Array.isArray(response.data)) {
               <td class="px-6 py-4 text-black">{Gafas.stock}</td>
               <td class="px-6 py-4 text-black">{Gafas.tipomontura}</td>
               <td class="px-6 py-4 text-black">{Gafas.color}</td>
+              <th
+                scope="row"
+                class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
+              >
+                <img
+                  src={Gafas.imagen}
+                  alt={Gafas.nombre}
+                  class="w-6 h-6 rounded-full ml-4"
+                />
+                <div class="ps-3">
+                  <div class="hidden">{Gafas.id}</div>
+                </div>
+              </th>
             </tr>
           ))
         ) : (
@@ -152,18 +169,16 @@ if (response.success && Array.isArray(response.data)) {
   </table>
 </div>
 
-<!-- Modal para agregar producto -->
 <div
   id="modalAgregarProductos"
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+  class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs hidden"
 >
-  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl border-2">
     <h3 class="text-xl font-semibold mb-6 text-black text-center">
       Agregar Producto
     </h3>
     <form id="formAgregarProducto" onsubmit="return false;">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Nombre -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Nombre</label
@@ -175,20 +190,23 @@ if (response.success && Array.isArray(response.data)) {
             required
           />
         </div>
-        <!-- Marca -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Marca</label
           >
-          <input
-            type="text"
+          <select
             name="marca"
-            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black bg-white"
             required
-          />
+          >
+            <option value="" disabled selected>Seleccione una marca</option>
+            <option value="RayBan">RayBan</option>
+            <option value="Oakley">Oakley</option>
+            <option value="Persol">Persol</option>
+            <option value="Warby Parker">Warby Parker</option>
+            <option value="Tom Ford">Tom Ford</option>
+          </select>
         </div>
-
-        <!-- Precio -->
         <div class="sm:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Precio</label
@@ -196,12 +214,12 @@ if (response.success && Array.isArray(response.data)) {
           <input
             type="number"
             name="precio"
+            step="0.01"
             class="block w-full p-2 border border-gray-300 rounded-md text-black"
             required
           />
         </div>
 
-        <!-- Stock -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Stock</label
@@ -213,201 +231,255 @@ if (response.success && Array.isArray(response.data)) {
             required
           />
         </div>
-        <!-- imagen -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
-            >imagen</label
+            >Imagen</label
           >
           <input
-            type="text"
+            type="file"
             name="imagen"
+            id="imagenInput"
+            accept="image/*"
             class="block w-full p-2 border border-gray-300 rounded-md text-black"
             required
           />
+          <div id="imagePreview" class="mt-2 hidden">
+            <img id="previewImage" class="h-20 w-auto" />
+          </div>
         </div>
 
-        <!-- Fecha de Nacimiento -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Tipo Montura</label
           >
-          <input
-            type="text"
+          <select
             name="tipomontura"
-            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black bg-white"
             required
-          />
+          >
+            <option value="" disabled selected>Seleccione un tipo</option>
+            <option value="Full Rim">Full Rim</option>
+            <option value="Half Rim">Half Rim</option>
+            <option value="Rimless">Rimless</option>
+            <option value="Browline">Browline</option>
+          </select>
         </div>
-        <!-- Fecha de Expedición -->
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Color</label
           >
-          <input
-            type="text"
+          <select
             name="color"
-            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black bg-white"
             required
-          />
+          >
+            <option value="" disabled selected>Seleccione un color</option>
+            <option value="Black">Black</option>
+            <option value="Gold">Gold</option>
+            <option value="Silver">Silver</option>
+            <option value="Tortoise">Tortoise</option>
+            <option value="Crystal">Crystal</option>
+            <option value="Havana">Havana</option>
+          </select>
         </div>
-      </div>
 
-      <!-- Botones -->
-      <div class="flex justify-end mt-6 space-x-3">
-        <button
-          type="button"
-          id="cancelarModalProductos"
-          class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-        >
-          Guardar
-        </button>
+        <div class="flex justify-end mt-6 space-x-3">
+          <button
+            type="button"
+            id="cancelarModalProductos"
+            class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Guardar
+          </button>
+        </div>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Modal para editar producto -->
 <div
   id="modalEditarProductos"
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+  class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs hidden"
 >
-  <div class="bg-white p-5 rounded-lg w-full max-w-2xl">
+  <div class="bg-white p-5 rounded-lg w-full max-w-2xl border-2">
     <h3 class="text-xl font-semibold mb-6 text-black text-center">
-      Agregar Producto
+      Editar Producto
     </h3>
     <form id="formEditarProducto" onsubmit="return false;">
+      <input type="hidden" id="productoId" name="id" />
+      <input type="hidden" id="imagenActual" name="imagenActual" />
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Nombre -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Nombre</label
           >
           <input
             type="text"
+            id="editNombre"
             name="nombre"
             class="block w-full p-2 border border-gray-300 rounded-md text-black"
             required
           />
         </div>
-        <!-- Marca -->
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Marca</label
           >
-          <input
-            type="text"
+          <select
+            id="editMarca"
             name="marca"
-            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black bg-white"
             required
-          />
+          >
+            <option value="RayBan">RayBan</option>
+            <option value="Oakley">Oakley</option>
+            <option value="Persol">Persol</option>
+            <option value="Warby Parker">Warby Parker</option>
+            <option value="Tom Ford">Tom Ford</option>
+          </select>
         </div>
 
-        <!-- Precio -->
-        <div class="sm:col-span-2">
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Precio</label
           >
           <input
             type="number"
+            id="editPrecio"
             name="precio"
+            step="0.01"
             class="block w-full p-2 border border-gray-300 rounded-md text-black"
             required
           />
         </div>
 
-        <!-- Stock -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Stock</label
           >
           <input
             type="number"
+            id="editStock"
             name="stock"
             class="block w-full p-2 border border-gray-300 rounded-md text-black"
             required
           />
         </div>
-        <!-- imagen -->
-        <div>
+
+        <div class="sm:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-1"
-            >imagen</label
+            >Imagen</label
           >
-          <input
-            type="text"
-            name="imagen"
-            class="block w-full p-2 border border-gray-300 rounded-md text-black"
-            required
-          />
+          <div class="flex items-center gap-4">
+            <div id="imagePreviewEdit" class="flex-shrink-0">
+              <img id="previewImageEdit" class="h-20 w-auto rounded-md" />
+            </div>
+            <div class="flex-1">
+              <input
+                type="file"
+                id="imagenInputEdit"
+                name="imagen"
+                accept="image/*"
+                class="block w-full p-2 border border-gray-300 rounded-md text-black"
+              />
+              <p class="mt-1 text-xs text-gray-500">
+                Seleccione una nueva imagen para reemplazar la actual
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- Fecha de Nacimiento -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Tipo Montura</label
           >
-          <input
-            type="text"
+          <select
+            id="editTipoMontura"
             name="tipomontura"
-            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black bg-white"
             required
-          />
+          >
+            <option value="Full Rim">Full Rim</option>
+            <option value="Half Rim">Half Rim</option>
+            <option value="Rimless">Rimless</option>
+            <option value="Browline">Browline</option>
+          </select>
         </div>
-        <!-- Fecha de Expedición -->
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Color</label
           >
-          <input
-            type="text"
+          <select
+            id="editColor"
             name="color"
-            class="block w-full p-2 border border-gray-300 rounded-md text-black"
+            class="block w-full p-2 border border-gray-300 rounded-md text-black bg-white"
             required
-          />
+          >
+            <option value="Black">Black</option>
+            <option value="Gold">Gold</option>
+            <option value="Silver">Silver</option>
+            <option value="Tortoise">Tortoise</option>
+            <option value="Crystal">Crystal</option>
+            <option value="Havana">Havana</option>
+          </select>
         </div>
       </div>
 
-      <!-- Botones -->
       <div class="flex justify-end mt-6 space-x-3">
         <button
           type="button"
-          id="cancelarModalProductos"
+          id="cancelarEditarProducto"
           class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
         >
           Cancelar
         </button>
         <button
           type="submit"
+          id="submitEditarProducto"
           class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
         >
-          Guardar
+          Guardar Cambios
         </button>
       </div>
     </form>
   </div>
 </div>
 
-<script type="module">
+<script>
+  import { updateProducto } from "../logic/servicioProductos";
+  import { addProducts, deleteProducto } from "../logic/servicioProductos";
+  import type { Gafas } from "../models/gafas";
+
   let searchQuery = "";
-  const inputSearch = document.getElementById("inputSearchProduct");
-  const userTable = document.getElementById("productTable");
+  const inputSearch = document.getElementById(
+    "inputSearchProduct"
+  ) as HTMLInputElement;
+  const productTableBody = document.getElementById(
+    "productTable"
+  ) as HTMLTableSectionElement;
 
   function filterProduct() {
     const search = searchQuery.toLowerCase();
-    const rows = Array.from(userTable.children);
+    const rows = Array.from(productTableBody.children) as HTMLElement[];
 
     rows.forEach((row) => {
-      const nombre = row.children[1].textContent.toLowerCase();
-      const marca = row.children[2].textContent.toLowerCase();
-      const precio = row.children[3].textContent.toLowerCase();
-      const stock = row.children[4].textContent.toLocaleLowerCase();
-      const montura = row.children[5].textContent.toLocaleLowerCase();
-      const color = row.children[6].textContent.toLocaleLowerCase();
+      // Ajustar los índices si la estructura de tu tabla cambia
+      const nombre = row.children[1]?.textContent?.toLowerCase() || "";
+      const marca = row.children[2]?.textContent?.toLowerCase() || "";
+      const precio = row.children[3]?.textContent?.toLowerCase() || "";
+      const stock = row.children[4]?.textContent?.toLocaleLowerCase() || "";
+      const montura = row.children[5]?.textContent?.toLocaleLowerCase() || "";
+      const color = row.children[6]?.textContent?.toLocaleLowerCase() || "";
 
       if (
         nombre.includes(search) ||
@@ -425,14 +497,69 @@ if (response.success && Array.isArray(response.data)) {
   }
 
   inputSearch.addEventListener("input", (event) => {
-    searchQuery = event.target.value;
+    searchQuery = (event.target as HTMLInputElement).value;
     filterProduct();
   });
-</script>
 
-<script>
-  import { addProducts, deleteProducto } from "../logic/servicioProductos";
-  import type { Gafas } from "../models/gafas";
+  // Función de validación centralizada
+  function validateProductForm(formData: FormData, isEdit: boolean): boolean {
+    const nombre = formData.get("nombre") as string;
+    const marca = formData.get("marca") as string;
+    const precio = parseFloat(formData.get("precio") as string);
+    const stock = parseInt(formData.get("stock") as string);
+    const imagenFile = (
+      document.getElementById(
+        isEdit ? "imagenInputEdit" : "imagenInput"
+      ) as HTMLInputElement
+    ).files?.[0];
+    const imagenActual = formData.get("imagenActual") as string;
+    const tipomontura = formData.get("tipomontura") as string;
+    const color = formData.get("color") as string;
+
+    if (!nombre || nombre.trim() === "") {
+      alert("El nombre del producto no puede estar vacío.");
+      return false;
+    }
+
+    if (!marca || marca.trim() === "") {
+      alert("La marca del producto no puede estar vacía.");
+      return false;
+    }
+
+    if (isNaN(precio) || precio <= 0) {
+      alert("El precio debe ser un número mayor que 0.");
+      return false;
+    }
+
+    if (isNaN(stock) || stock < 0) {
+      alert("El stock debe ser un número entero mayor o igual a 0.");
+      return false;
+    }
+
+    if (!isEdit && !imagenFile) {
+      alert("Por favor, selecciona una imagen para el producto.");
+      return false;
+    }
+
+    if (isEdit && !imagenFile && !imagenActual) {
+      alert(
+        "Debe haber una imagen para el producto. Si no seleccionas una nueva, la anterior se mantendrá."
+      );
+      return false;
+    }
+
+    if (!tipomontura || tipomontura.trim() === "") {
+      alert("El tipo de montura no puede estar vacío.");
+      return false;
+    }
+
+    if (!color || color.trim() === "") {
+      alert("El color del producto no puede estar vacío.");
+      return false;
+    }
+
+    return true;
+  }
 
   document
     .getElementById("formAgregarProducto")
@@ -441,21 +568,39 @@ if (response.success && Array.isArray(response.data)) {
       const form = event.target as HTMLFormElement;
       const formData = new FormData(form);
 
-      const productoData = {
+      if (!validateProductForm(formData, false)) {
+        // 'false' para indicar que es el formulario de agregar
+        return;
+      }
+
+      const imagenInput = document.getElementById(
+        "imagenInput"
+      ) as HTMLInputElement;
+      const imagenFile = imagenInput.files?.[0];
+
+      let imagenBase64 = "";
+      if (imagenFile) {
+        imagenBase64 = await convertToBase64(imagenFile);
+      }
+
+      const productoData: Gafas = {
+        id: 0, // El ID será asignado por el backend
         nombre: formData.get("nombre") as string,
         marca: formData.get("marca") as string,
         precio: parseFloat(formData.get("precio") as string),
         stock: parseInt(formData.get("stock") as string),
-        imagen: formData.get("imagen") as string,
+        imagen: imagenBase64,
         tipomontura: formData.get("tipomontura") as string,
         color: formData.get("color") as string,
       };
 
       try {
-        const response = await addProducts(productoData as Gafas);
+        const response = await addProducts(productoData);
         if (response.success) {
           alert("Producto agregado exitosamente");
           window.location.reload();
+        } else {
+          alert(response.error || "Error al agregar el producto.");
         }
       } catch (error) {
         console.error("Error en el formulario:", error);
@@ -463,12 +608,43 @@ if (response.success && Array.isArray(response.data)) {
       }
     });
 
-  // apertura de modal
-  const modalAgregar = document.getElementById("modalAgregarProductos");
-  const btnAgregarProducto = document.getElementById("agregarProducto");
+  function convertToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
+  document
+    .getElementById("imagenInput")
+    ?.addEventListener("change", function (e) {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const preview = document.getElementById(
+            "previewImage"
+          ) as HTMLImageElement;
+          preview.src = event.target?.result as string;
+          document.getElementById("imagePreview")?.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      } else {
+        document.getElementById("imagePreview")?.classList.add("hidden");
+      }
+    });
+
+  const modalAgregar = document.getElementById(
+    "modalAgregarProductos"
+  ) as HTMLElement;
+  const btnAgregarProducto = document.getElementById(
+    "agregarProducto"
+  ) as HTMLButtonElement;
   const btncancelarProductos = document.getElementById(
     "cancelarModalProductos"
-  );
+  ) as HTMLButtonElement;
 
   btnAgregarProducto.addEventListener("click", () => {
     modalAgregar.classList.remove("hidden");
@@ -476,34 +652,230 @@ if (response.success && Array.isArray(response.data)) {
 
   btncancelarProductos.addEventListener("click", () => {
     modalAgregar.classList.add("hidden");
-    (document.getElementById("formAgregarUsuario") as HTMLFormElement).reset();
+    (document.getElementById("formAgregarProducto") as HTMLFormElement).reset();
+    document.getElementById("imagePreview")?.classList.add("hidden");
   });
 
   window.addEventListener("click", (event) => {
     if (event.target === modalAgregar) {
       modalAgregar.classList.add("hidden");
+      (
+        document.getElementById("formAgregarProducto") as HTMLFormElement
+      ).reset();
+      document.getElementById("imagePreview")?.classList.add("hidden");
     }
   });
 
-  // aca realizo la acciones de los chechbox
   const userCheckboxes = document.querySelectorAll(
     ".userCheckbox"
   ) as NodeListOf<HTMLInputElement>;
+  const btnEditarProducto = document.getElementById(
+    "editarProducto"
+  ) as HTMLButtonElement;
+  const modalEditar = document.getElementById(
+    "modalEditarProductos"
+  ) as HTMLElement;
+  const btnCancelarEditarProducto = document.getElementById(
+    "cancelarEditarProducto"
+  ) as HTMLButtonElement;
 
   userCheckboxes.forEach((checkbox) => {
     checkbox.addEventListener("change", function () {
-      const allChecked = Array.from(userCheckboxes).every(
-        (checkbox) => checkbox.checked
-      );
-      !allChecked &&
-        Array.from(userCheckboxes).some((checkbox) => checkbox.checked);
+      if (this.checked) {
+        userCheckboxes.forEach((otherCheckbox) => {
+          if (otherCheckbox !== this) {
+            otherCheckbox.checked = false;
+          }
+        });
+      }
     });
   });
+
+  btnEditarProducto.addEventListener("click", () => {
+    const selectedCheckbox = document.querySelector(
+      ".userCheckbox:checked"
+    ) as HTMLInputElement;
+
+    if (!selectedCheckbox) {
+      alert("Por favor, selecciona un producto para actualizar.");
+      return;
+    }
+
+    const producto: Gafas = {
+      id: parseInt(selectedCheckbox.dataset.id || "0"),
+      nombre: selectedCheckbox.dataset.nombre || "",
+      marca: selectedCheckbox.dataset.marca || "",
+      precio: parseFloat(selectedCheckbox.dataset.precio || "0"),
+      stock: parseInt(selectedCheckbox.dataset.stock || "0"),
+      imagen: selectedCheckbox.dataset.imagen || "",
+      tipomontura: selectedCheckbox.dataset.tipomontura || "",
+      color: selectedCheckbox.dataset.color || "",
+    };
+
+    loadProductDataInModal(producto);
+  });
+
+  function loadProductDataInModal(producto: Gafas) {
+    if (!modalEditar) return;
+
+    (document.getElementById("productoId") as HTMLInputElement).value =
+      producto.id.toString();
+    (document.getElementById("editNombre") as HTMLInputElement).value =
+      producto.nombre;
+    (document.getElementById("editMarca") as HTMLSelectElement).value =
+      producto.marca;
+    (document.getElementById("editPrecio") as HTMLInputElement).value =
+      producto.precio.toString();
+    (document.getElementById("editStock") as HTMLInputElement).value =
+      producto.stock.toString();
+    (document.getElementById("editTipoMontura") as HTMLSelectElement).value =
+      producto.tipomontura;
+    (document.getElementById("editColor") as HTMLSelectElement).value =
+      producto.color;
+
+    const imagenActualInput = document.getElementById(
+      "imagenActual"
+    ) as HTMLInputElement;
+    imagenActualInput.value = producto.imagen;
+
+    const previewImage = document.getElementById(
+      "previewImageEdit"
+    ) as HTMLImageElement;
+    previewImage.src = producto.imagen;
+    document.getElementById("imagePreviewEdit")?.classList.remove("hidden"); // Asegurarse de que la previsualización sea visible
+
+    modalEditar.classList.remove("hidden");
+  }
+
+  btnCancelarEditarProducto.addEventListener("click", () => {
+    modalEditar.classList.add("hidden");
+    (document.getElementById("formEditarProducto") as HTMLFormElement).reset();
+    (document.getElementById("imagenInputEdit") as HTMLInputElement).value = "";
+    (document.getElementById("previewImageEdit") as HTMLImageElement).src = "";
+    document.getElementById("imagePreviewEdit")?.classList.add("hidden"); // Ocultar previsualización al cancelar
+  });
+
+  window.addEventListener("click", (event) => {
+    if (event.target === modalEditar) {
+      modalEditar.classList.add("hidden");
+      (
+        document.getElementById("formEditarProducto") as HTMLFormElement
+      ).reset();
+      (document.getElementById("imagenInputEdit") as HTMLInputElement).value =
+        "";
+      (document.getElementById("previewImageEdit") as HTMLImageElement).src =
+        "";
+      document.getElementById("imagePreviewEdit")?.classList.add("hidden"); // Ocultar previsualización al cerrar
+    }
+  });
+
+  document
+    .getElementById("formEditarProducto")
+    ?.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const submitButton = document.getElementById(
+        "submitEditarProducto"
+      ) as HTMLButtonElement;
+      if (!submitButton) return;
+
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      if (!validateProductForm(formData, true)) {
+        // 'true' para indicar que es el formulario de edición
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = "Actualizando...";
+
+      try {
+        const productoId = (
+          document.getElementById("productoId") as HTMLInputElement
+        ).value;
+
+        let imagenBase64 = formData.get("imagenActual") as string;
+        const imagenInput = document.getElementById(
+          "imagenInputEdit"
+        ) as HTMLInputElement;
+
+        if (imagenInput.files && imagenInput.files[0]) {
+          imagenBase64 = await convertToBase64(imagenInput.files[0]);
+        }
+
+        const productoData: Gafas = {
+          id: parseInt(productoId),
+          nombre: formData.get("nombre") as string,
+          marca: formData.get("marca") as string,
+          precio: parseFloat(formData.get("precio") as string),
+          stock: parseInt(formData.get("stock") as string),
+          imagen: imagenBase64,
+          tipomontura: formData.get("tipomontura") as string,
+          color: formData.get("color") as string,
+        };
+
+        const response = await updateProducto(productoData);
+
+        if (response.success) {
+          alert("Producto actualizado exitosamente");
+          window.location.reload();
+        } else {
+          throw new Error(response.error || "Error al actualizar el producto");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Ocurrió un error al actualizar el producto"
+        );
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Guardar Cambios";
+      }
+    });
+
+  document
+    .getElementById("imagenInputEdit")
+    ?.addEventListener("change", function (this: HTMLInputElement) {
+      const previewImage = document.getElementById(
+        "previewImageEdit"
+      ) as HTMLImageElement;
+      if (!previewImage) return;
+
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target?.result as string;
+          document
+            .getElementById("imagePreviewEdit")
+            ?.classList.remove("hidden");
+        };
+        reader.readAsDataURL(this.files[0]);
+      } else {
+        // Si se borra la selección de imagen, mostrar la imagen actual o ocultar si no hay
+        const imagenActual = (
+          document.getElementById("imagenActual") as HTMLInputElement
+        )?.value;
+        if (imagenActual) {
+          previewImage.src = imagenActual;
+          document
+            .getElementById("imagePreviewEdit")
+            ?.classList.remove("hidden");
+        } else {
+          previewImage.src = "";
+          document.getElementById("imagePreviewEdit")?.classList.add("hidden");
+        }
+      }
+    });
 
   document
     .getElementById("eliminarProducto")
     .addEventListener("click", async () => {
-      const selectedCheckbox = document.querySelector(".userCheckbox:checked");
+      const selectedCheckbox = document.querySelector(
+        ".userCheckbox:checked"
+      ) as HTMLInputElement;
 
       if (!selectedCheckbox) {
         alert("Por favor, selecciona un producto para eliminar.");
@@ -511,7 +883,6 @@ if (response.success && Array.isArray(response.data)) {
       }
 
       const id = Number(selectedCheckbox.getAttribute("data-id"));
-      console.log(id);
 
       const confirmDelete = window.confirm(
         "¿Estás seguro de que deseas eliminar este producto?"
@@ -524,10 +895,10 @@ if (response.success && Array.isArray(response.data)) {
         const response = await deleteProducto(id);
 
         if (response.success) {
-          alert("Productos eliminado con éxito.");
+          alert("Producto eliminado con éxito.");
           location.reload();
         } else {
-          alert("Hubo un error al eliminar el producto.");
+          alert("Hubo un error al eliminar el producto: " + response.error);
         }
       } catch (error) {
         console.error("Error al eliminar el producto:", error);
