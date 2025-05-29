@@ -22,7 +22,7 @@ export async function obtenerPacientes() {
   }
 }
 
-export async function agregarPaciente(pacienteData: Pacientes) {
+export async function agregarPacientes(pacienteData: pacientesDto) {
   try {
     const response = await fetch("http://localhost:4321/api/agregarPaciente", {
       method: "POST",
@@ -71,7 +71,7 @@ export async function eliminarPaciente(id: number) {
   }
 }
 
-export async function actualizarPaciente(pacienteData: Pacientes) {
+export async function actualizarPacientes(pacienteData: Pacientes) {
   try {
     const response = await fetch(
       "http://localhost:4321/api/actualizarPaciente",

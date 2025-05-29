@@ -1,7 +1,4 @@
-// tests/gestionProductos.spec.ts
 import { test, expect } from "@playwright/test";
-import * as path from "path";
-import { fileURLToPath } from "url";
 
 test.describe("Gestión de Productos - Agregar Producto", () => {
   test.beforeEach(async ({ page }) => {
@@ -74,7 +71,7 @@ test.describe("Gestión de Productos - Agregar Producto", () => {
     );
     await page.fill('#formAgregarProducto input[name="precio"]', "75.00");
     await page.fill('#formAgregarProducto input[name="stock"]', "50");
-    const imagePath = "C:\\Users\\walga\\bitmap.png"; // <-- ¡Aquí tu ruta absoluta!
+    const imagePath = "C:\\Users\\walga\\bitmap.png";
     await page.setInputFiles("#imagenInput", imagePath);
 
     await page.selectOption(

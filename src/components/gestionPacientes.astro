@@ -1,67 +1,82 @@
 ---
+// src/pages/pacientes.astro (o el nombre de tu archivo de página)
 import { Icon } from "astro-icon/components";
 import { getAllPacientes } from "../logic/servicioPacientes";
 import type { Pacientes } from "../models/pacientes";
+import { actualizarPaciente } from "../logic/servicioPacientes"; // Importar la función de actualización
 
 const response = await getAllPacientes();
-
 let pacientes: Pacientes[] = [];
 
 if (response.success && Array.isArray(response.data)) {
-  pacientes = response.data.map((paciente) => ({
-    id: paciente.id,
-    nombre_completo: paciente.nombre_completo,
-    fecha_nacimiento: paciente.fecha_nacimiento,
-    sexo: paciente.sexo,
-    documento_identidad: paciente.documento_identidad,
-    telefono_contacto: paciente.telefono_contacto,
-    correo_electronico: paciente.correo_electronico,
-  }));
+  pacientes = response.data.map((apiPaciente: any) => {
+    let fechaNacimientoStr = apiPaciente.fecha_nacimiento;
+    if (
+      typeof fechaNacimientoStr === "string" &&
+      fechaNacimientoStr.includes("T")
+    ) {
+      fechaNacimientoStr = fechaNacimientoStr.split("T")[0];
+    }
+
+    return {
+      id: apiPaciente.id,
+      nombre_completo: apiPaciente.nombre_completo,
+      fecha_nacimiento: fechaNacimientoStr,
+      sexo: apiPaciente.sexo as "M" | "F",
+      documento_identidad: apiPaciente.documento_identidad,
+      telefono_contacto: apiPaciente.telefono_contacto,
+      correo_electronico: apiPaciente.correo_electronico || null,
+      fecha_registro: apiPaciente.fecha_registro, // Asegúrate de incluir esto si lo necesitas en el front
+    };
+  });
 } else {
-  console.error("Error: La respuesta no contiene un arreglo válido.", response);
+  console.error(
+    "Error: La respuesta de getAllPacientes no contiene un arreglo válido.",
+    response.error || response
+  );
 }
+
+console.log("aqui esta la lista de los pacientes", pacientes);
+
+const today = new Date().toISOString().split("T")[0];
+const minBirthDate = new Date();
+minBirthDate.setFullYear(minBirthDate.getFullYear() - 120);
+const minBirthDateString = minBirthDate.toISOString().split("T")[0];
 ---
+
+<style>
+  /* Estilos para ambos modales */
+  .modal-overlay {
+    display: flex;
+  }
+  .modal-content {
+    transition:
+      transform 0.3s ease-out,
+      opacity 0.3s ease-out;
+  }
+  .modal-hidden {
+    opacity: 0;
+  }
+  .modal-hidden .modal-content {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+</style>
 
 <div
   class="overflow-x-auto shadow-md sm:rounded-lg h-full bg-[#e9eef6] p-4 pb-2"
 >
-  <div class="flex items-center justify-between">
-    <!-- Contenedor para botones e input -->
+  <div class="flex items-center justify-between mb-4">
     <div class="flex items-center justify-between w-full">
-      <!-- Botones -->
       <div class="flex items-center space-x-2">
         <button
-          id="editarPaciente"
-          class="flex items-center text-black hover:bg-blue-300 p-1 rounded-md"
-        >
-          <Icon
-            name="actualizar"
-            class="w-6 h-6 mr-2 flex items-center text-[#4011ff]"
-          />
-          Actualizar
-        </button>
-        <button
-          id="eliminarPaciente"
-          class="flex items-center text-black hover:bg-red-300 p-1 rounded-md"
-        >
-          <Icon
-            name="eliminar"
-            class="w-6 h-6 mr-2 flex items-center text-[#df4d5e]"
-          />
-          Eliminar
-        </button>
-        <button
-          id="agregarPaciente"
+          id="abrirModalAgregarPaciente"
+          title="Agregar nuevo paciente"
           class="flex items-center text-black hover:bg-green-300 p-1 rounded-md"
         >
-          <Icon
-            name="add"
-            class="w-6 h-6 mr-2 flex items-center text-[#29b73a96]"
-          />
-          Agregar
+          <Icon name="add" class="w-6 h-6 mr-2 text-[#29b73a96]" /> Agregar
         </button>
       </div>
-      <!-- Input -->
       <div class="relative ml-auto">
         <div
           class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
@@ -84,75 +99,96 @@ if (response.success && Array.isArray(response.data)) {
         <input
           type="text"
           id="inputSearchPaciente"
-          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-[#e9eef6] focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          placeholder="Buscar Paciente"
+          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Buscar Paciente..."
         />
       </div>
     </div>
   </div>
 
-  <!-- aqui Inicia la Tabla con la Indectacion de los Pacientes -->
   <table
-    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 mt-2"
+    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-200 mt-2"
   >
     <thead
-      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-green-600 dark:text-white"
+      class="text-xs uppercase bg-gray-200 dark:bg-blue-950 dark:text-white"
     >
       <tr>
         <th scope="col" class="p-4">
-          <Icon name="square" />
+          <Icon name="square" class="w-5 h-5 text-gray-600" />
         </th>
-        <th scope="col" class="px-9 py-3">Nombre Completo</th>
+        <th scope="col" class="px-6 py-3">Nombre Completo</th>
         <th scope="col" class="px-6 py-3">Documento</th>
         <th scope="col" class="px-6 py-3">Sexo</th>
         <th scope="col" class="px-6 py-3">Fecha Nacimiento</th>
-        <th scope="col" class="px-6 py-3">Telefono</th>
-        <th scope="col" class="px-6 py-3">Correo</th>
+        <th scope="col" class="px-6 py-3">Teléfono</th>
+        <th scope="col" class="px-6 py-3">Correo Electrónico</th>
+        <th scope="col" class="px-6 py-3">Acciones</th>
       </tr>
     </thead>
-
-    <tbody id="pacienteTable">
+    <tbody id="pacienteTableBody">
       {
         pacientes.length > 0 ? (
           pacientes.map((paciente) => (
-            <tr class=" border-b bg-[#e9eef6] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-400">
+            <tr
+              class="border-b bg-white dark:bg-white dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-200 dark:text-black"
+              data-paciente-id={paciente.id}
+            >
               <td class="w-4 p-4">
                 <input
                   type="checkbox"
-                  class="form-checkbox userCheckbox"
+                  class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 userCheckbox"
                   data-id={paciente.id}
                 />
               </td>
-              <th
-                scope="row"
-                class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
-              >
-                <div class="ps-3">
-                  <div class="hidden">{paciente.id}</div>
-                  <div class="text-black font-semibold">
-                    {paciente.nombre_completo}
-                  </div>
-                </div>
-              </th>
-              <td class="px-6 py-4 text-black">
+              <td class="px-6 py-4 text-gray-900 dark:text-black font-medium">
+                {paciente.nombre_completo}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
                 {paciente.documento_identidad}
               </td>
-              <td class="px-6 py-4 text-black">{paciente.sexo}</td>
-              <td class="px-6 py-4 text-black">
-                {new Date(paciente.fecha_nacimiento).toLocaleDateString(
-                  "es-ES"
-                )}
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                {paciente.sexo}
               </td>
-              <td class="px-6 py-4 text-black">{paciente.telefono_contacto}</td>
-              <td class="px-6 py-4 text-black">
-                {paciente.correo_electronico}
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                {new Date(
+                  paciente.fecha_nacimiento + "T00:00:00"
+                ).toLocaleDateString("es-ES", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                })}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                {paciente.telefono_contacto}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                {paciente.correo_electronico || "N/A"}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                <button
+                  type="button"
+                  class="edit-paciente-btn font-medium text-blue-600 hover:underline dark:text-blue-500"
+                  data-id={paciente.id}
+                  data-nombre_completo={paciente.nombre_completo}
+                  data-fecha_nacimiento={paciente.fecha_nacimiento}
+                  data-sexo={paciente.sexo}
+                  data-documento_identidad={paciente.documento_identidad}
+                  data-telefono_contacto={paciente.telefono_contacto}
+                  data-correo_electronico={paciente.correo_electronico || ""}
+                  title="Editar paciente"
+                >
+                  <Icon name="actualizar" class="w-5 h-5" />
+                </button>
               </td>
             </tr>
           ))
         ) : (
           <tr>
-            <td colspan="4" class="px-6 py-4 text-center">
-              No users found.
+            <td
+              colspan="8"
+              class="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
+            >
+              No se encontraron pacientes.
             </td>
           </tr>
         )
@@ -161,40 +197,879 @@ if (response.success && Array.isArray(response.data)) {
   </table>
 </div>
 
-<script type="module">
-  let searchQuery = "";
-  const inputSearch = document.getElementById("inputSearchPaciente");
-  const userTable = document.getElementById("pacienteTable");
+<div
+  id="agregarPacienteModal"
+  class="fixed inset-0 z-50 hidden items-center justify-center backdrop-blur-xs transition-opacity duration-300 ease-in-out modal-hidden"
+>
+  <div
+    class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out modal-content border-2"
+    id="modalContent"
+  >
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">
+        Agregar Nuevo Paciente
+      </h2>
+      <button
+        id="cerrarModalBtn"
+        title="Cerrar modal"
+        class="text-gray-500 hover:text-gray-800 transition-colors"
+      >
+        <Icon name="close" class="w-6 h-6" />
+      </button>
+    </div>
+    <form id="agregarPacienteForm" novalidate>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+        <div>
+          <label
+            for="nombre_completo"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Nombre Completo</label
+          >
+          <input
+            type="text"
+            name="nombre_completo"
+            id="nombre_completo"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span class="text-red-500 text-xs mt-1" id="error_nombre_completo"
+          ></span>
+        </div>
+        <div>
+          <label
+            for="documento_identidad"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Documento de Identidad</label
+          >
+          <input
+            type="text"
+            name="documento_identidad"
+            id="documento_identidad"
+            required
+            minlength="8"
+            maxlength="10"
+            pattern="\d{8,10}"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span class="text-red-500 text-xs mt-1" id="error_documento_identidad"
+          ></span>
+        </div>
+        <div>
+          <label
+            for="fecha_nacimiento"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Fecha de Nacimiento</label
+          >
+          <input
+            type="date"
+            name="fecha_nacimiento"
+            id="fecha_nacimiento"
+            required
+            max={today}
+            min={minBirthDateString}
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span class="text-red-500 text-xs mt-1" id="error_fecha_nacimiento"
+          ></span>
+        </div>
+        <div>
+          <label for="sexo" class="block text-sm font-medium text-gray-700 mb-1"
+            >Sexo</label
+          >
+          <select
+            name="sexo"
+            id="sexo"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled selected>Seleccione...</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+          </select>
+          <span class="text-red-500 text-xs mt-1" id="error_sexo"></span>
+        </div>
+        <div>
+          <label
+            for="telefono_contacto"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Teléfono de Contacto</label
+          >
+          <input
+            type="tel"
+            name="telefono_contacto"
+            id="telefono_contacto"
+            required
+            pattern="\d{7,15}"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span class="text-red-500 text-xs mt-1" id="error_telefono_contacto"
+          ></span>
+        </div>
+        <div>
+          <label
+            for="correo_electronico"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Correo Electrónico</label
+          >
+          <input
+            type="email"
+            name="correo_electronico"
+            id="correo_electronico"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span class="text-red-500 text-xs mt-1" id="error_correo_electronico"
+          ></span>
+        </div>
+      </div>
+      <div id="formErrorSummary" class="text-red-600 text-sm mb-3 min-h-[1em]">
+      </div>
+      <div
+        id="formSuccessMessage"
+        class="text-green-600 text-sm mb-3 min-h-[1em]"
+      >
+      </div>
 
-  function filterProduct() {
-    const search = searchQuery.toLowerCase();
-    const rows = Array.from(userTable.children);
+      <div class="flex justify-end space-x-3">
+        <button
+          type="button"
+          id="cancelarModalBtn"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          id="guardarPacienteBtn"
+          class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50"
+        >
+          Guardar Paciente
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div
+  id="actualizarPacienteModal"
+  class="fixed inset-0 z-50 hidden items-center justify-center backdrop-blur-xs transition-opacity duration-300 ease-in-out modal-hidden"
+>
+  <div
+    class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out modal-content border-2"
+    id="actualizarModalContent"
+  >
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">Actualizar Paciente</h2>
+      <button
+        id="cerrarActualizarModalBtn"
+        title="Cerrar modal de actualización"
+        class="text-gray-500 hover:text-gray-800 transition-colors"
+      >
+        <Icon name="close" class="w-6 h-6" />
+      </button>
+    </div>
+    <form id="actualizarPacienteForm" novalidate>
+      <input type="hidden" id="update_paciente_id" name="id" />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+        <div>
+          <label
+            for="update_nombre_completo"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Nombre Completo</label
+          >
+          <input
+            type="text"
+            name="nombre_completo"
+            id="update_nombre_completo"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span
+            class="text-red-500 text-xs mt-1"
+            id="error_update_nombre_completo"></span>
+        </div>
+        <div>
+          <label
+            for="update_documento_identidad"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Documento de Identidad</label
+          >
+          <input
+            type="text"
+            name="documento_identidad"
+            id="update_documento_identidad"
+            required
+            minlength="8"
+            maxlength="10"
+            pattern="\d{8,10}"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span
+            class="text-red-500 text-xs mt-1"
+            id="error_update_documento_identidad"></span>
+        </div>
+        <div>
+          <label
+            for="update_fecha_nacimiento"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Fecha de Nacimiento</label
+          >
+          <input
+            type="date"
+            name="fecha_nacimiento"
+            id="update_fecha_nacimiento"
+            required
+            max={today}
+            min={minBirthDateString}
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span
+            class="text-red-500 text-xs mt-1"
+            id="error_update_fecha_nacimiento"></span>
+        </div>
+        <div>
+          <label
+            for="update_sexo"
+            class="block text-sm font-medium text-gray-700 mb-1">Sexo</label
+          >
+          <select
+            name="sexo"
+            id="update_sexo"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled selected>Seleccione...</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+          </select>
+          <span class="text-red-500 text-xs mt-1" id="error_update_sexo"></span>
+        </div>
+        <div>
+          <label
+            for="update_telefono_contacto"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Teléfono de Contacto</label
+          >
+          <input
+            type="tel"
+            name="telefono_contacto"
+            id="update_telefono_contacto"
+            required
+            pattern="\d{7,15}"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span
+            class="text-red-500 text-xs mt-1"
+            id="error_update_telefono_contacto"></span>
+        </div>
+        <div>
+          <label
+            for="update_correo_electronico"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Correo Electrónico</label
+          >
+          <input
+            type="email"
+            name="correo_electronico"
+            id="update_correo_electronico"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span
+            class="text-red-500 text-xs mt-1"
+            id="error_update_correo_electronico"></span>
+        </div>
+      </div>
+      <div
+        id="updateFormErrorSummary"
+        class="text-red-600 text-sm mb-3 min-h-[1em]"
+      >
+      </div>
+      <div
+        id="updateFormSuccessMessage"
+        class="text-green-600 text-sm mb-3 min-h-[1em]"
+      >
+      </div>
+
+      <div class="flex justify-end space-x-3">
+        <button
+          type="button"
+          id="cancelarActualizarModalBtn"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          id="guardarActualizacionPacienteBtn"
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
+        >
+          Actualizar Paciente
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  import {
+    agregarPaciente,
+    actualizarPaciente,
+  } from "../logic/servicioPacientes";
+  import type { Pacientes } from "../models/pacientes";
+
+  const inputSearch = document.getElementById(
+    "inputSearchPaciente"
+  ) as HTMLInputElement;
+  const pacienteTableBody = document.getElementById(
+    "pacienteTableBody"
+  ) as HTMLTableSectionElement;
+
+  // --- Elementos del Modal AGREGAR ---
+  const agregarModal = document.getElementById(
+    "agregarPacienteModal"
+  ) as HTMLDivElement;
+  const agregarModalContent = document.getElementById(
+    "modalContent"
+  ) as HTMLDivElement;
+  const abrirAgregarModalBtn = document.getElementById(
+    "abrirModalAgregarPaciente"
+  );
+  const cerrarAgregarModalBtn = document.getElementById("cerrarModalBtn");
+  const cancelarAgregarModalBtn = document.getElementById("cancelarModalBtn");
+  const agregarPacienteForm = document.getElementById(
+    "agregarPacienteForm"
+  ) as HTMLFormElement;
+  const guardarPacienteBtn = document.getElementById(
+    "guardarPacienteBtn"
+  ) as HTMLButtonElement;
+
+  const agregarFormErrorSummary = document.getElementById(
+    "formErrorSummary"
+  ) as HTMLDivElement;
+  const agregarFormSuccessMessage = document.getElementById(
+    "formSuccessMessage"
+  ) as HTMLDivElement;
+
+  // --- Elementos del Modal ACTUALIZAR ---
+  const actualizarModal = document.getElementById(
+    "actualizarPacienteModal"
+  ) as HTMLDivElement;
+  const actualizarModalContent = document.getElementById(
+    "actualizarModalContent"
+  ) as HTMLDivElement;
+  const cerrarActualizarModalBtn = document.getElementById(
+    "cerrarActualizarModalBtn"
+  );
+  const cancelarActualizarModalBtn = document.getElementById(
+    "cancelarActualizarModalBtn"
+  );
+  const actualizarPacienteForm = document.getElementById(
+    "actualizarPacienteForm"
+  ) as HTMLFormElement;
+  const guardarActualizacionPacienteBtn = document.getElementById(
+    "guardarActualizacionPacienteBtn"
+  ) as HTMLButtonElement;
+
+  const updateFormErrorSummary = document.getElementById(
+    "updateFormErrorSummary"
+  ) as HTMLDivElement;
+  const updateFormSuccessMessage = document.getElementById(
+    "updateFormSuccessMessage"
+  ) as HTMLDivElement;
+
+  // Campos para el modal de ACTUALIZAR
+  const updatePacienteIdInput = document.getElementById(
+    "update_paciente_id"
+  ) as HTMLInputElement;
+  const updateNombreCompletoInput = document.getElementById(
+    "update_nombre_completo"
+  ) as HTMLInputElement;
+  const updateDocumentoIdentidadInput = document.getElementById(
+    "update_documento_identidad"
+  ) as HTMLInputElement;
+  const updateFechaNacimientoInput = document.getElementById(
+    "update_fecha_nacimiento"
+  ) as HTMLInputElement;
+  const updateSexoSelect = document.getElementById(
+    "update_sexo"
+  ) as HTMLSelectElement;
+  const updateTelefonoContactoInput = document.getElementById(
+    "update_telefono_contacto"
+  ) as HTMLInputElement;
+  const updateCorreoElectronicoInput = document.getElementById(
+    "update_correo_electronico"
+  ) as HTMLInputElement;
+
+  // --- Lógica de Búsqueda ---
+  let searchQuery = "";
+  function filterPacientes() {
+    if (!pacienteTableBody) return;
+    const search = searchQuery.toLowerCase().trim();
+    const rows = Array.from(
+      pacienteTableBody.children
+    ) as HTMLTableRowElement[];
 
     rows.forEach((row) => {
-      const nombre = row.children[1].textContent.toLowerCase();
-      const documento = row.children[2].textContent.toLowerCase();
-      const sexo = row.children[3].textContent.toLowerCase();
-      const fecha_nacimiento = row.children[4].textContent.toLocaleLowerCase();
-      const telefono = row.children[5].textContent.toLocaleLowerCase();
-      const correo = row.children[6].textContent.toLocaleLowerCase();
+      if (row.cells.length < 7) return; // Asegura que la fila tenga suficientes celdas
+      const nombre = row.cells[1]?.textContent?.toLowerCase() || "";
+      const documento = row.cells[2]?.textContent?.toLowerCase() || "";
 
-      if (
-        nombre.includes(search) ||
-        documento.includes(search) ||
-        sexo.includes(search) ||
-        fecha_nacimiento.includes(search) ||
-        telefono.includes(search) ||
-        correo.includes(search)
-      ) {
+      if (nombre.includes(search) || documento.includes(search)) {
         row.style.display = "";
       } else {
         row.style.display = "none";
       }
     });
   }
+  if (inputSearch) {
+    inputSearch.addEventListener("input", (event) => {
+      searchQuery = (event.target as HTMLInputElement).value;
+      filterPacientes();
+    });
+  }
 
-  inputSearch.addEventListener("input", (event) => {
-    searchQuery = event.target.value;
-    filterProduct();
+  // --- Lógica de Apertura y Cierre de Modales ---
+  function openModal(
+    modalElement: HTMLDivElement,
+    modalContentElement: HTMLDivElement
+  ) {
+    modalElement.classList.remove("hidden", "modal-hidden");
+    modalElement.classList.add("modal-overlay");
+    setTimeout(() => {
+      modalContentElement.classList.remove("scale-95", "opacity-0");
+      modalContentElement.classList.add("scale-100", "opacity-100");
+    }, 10);
+  }
+
+  function closeModal(
+    modalElement: HTMLDivElement,
+    modalContentElement: HTMLDivElement
+  ) {
+    modalContentElement.classList.remove("scale-100", "opacity-100");
+    modalContentElement.classList.add("scale-95", "opacity-0");
+    setTimeout(() => {
+      modalElement.classList.add("modal-hidden");
+      setTimeout(() => {
+        modalElement.classList.add("hidden");
+        modalElement.classList.remove("modal-overlay");
+      }, 300);
+    }, 10);
+  }
+
+  // Event Listeners para el modal AGREGAR
+  abrirAgregarModalBtn?.addEventListener("click", () => {
+    openModal(agregarModal, agregarModalContent);
+    agregarPacienteForm.reset(); // Limpiar formulario al abrir
+    (document.getElementById("sexo") as HTMLSelectElement).value = ""; // Resetear select
+    clearAllErrors(agregarPacienteForm);
+    agregarFormErrorSummary.textContent = "";
+    agregarFormSuccessMessage.textContent = "";
+    guardarPacienteBtn.disabled = false;
   });
+  cerrarAgregarModalBtn?.addEventListener("click", () =>
+    closeModal(agregarModal, agregarModalContent)
+  );
+  cancelarAgregarModalBtn?.addEventListener("click", () =>
+    closeModal(agregarModal, agregarModalContent)
+  );
+  agregarModal?.addEventListener("click", (event) => {
+    if (event.target === agregarModal)
+      closeModal(agregarModal, agregarModalContent);
+  });
+
+  // Event Listeners para el modal ACTUALIZAR (nuevos)
+  cerrarActualizarModalBtn?.addEventListener("click", () =>
+    closeModal(actualizarModal, actualizarModalContent)
+  );
+  cancelarActualizarModalBtn?.addEventListener("click", () =>
+    closeModal(actualizarModal, actualizarModalContent)
+  );
+  actualizarModal?.addEventListener("click", (event) => {
+    if (event.target === actualizarModal)
+      closeModal(actualizarModal, actualizarModalContent);
+  });
+
+  // --- Lógica de Validación de Formularios ---
+  // Reutilizamos la validación para ambos formularios, usando el formulario como contexto
+  function validateField(
+    input: HTMLInputElement | HTMLSelectElement,
+    formContext: HTMLFormElement
+  ): boolean {
+    let isValid = true;
+    // Prefijo de ID de error para el formulario de actualización
+    const errorIdPrefix =
+      formContext.id === "actualizarPacienteForm" ? "error_update_" : "error_";
+    const errorElement = document.getElementById(
+      `${errorIdPrefix}${input.name}`
+    ) as HTMLSpanElement;
+
+    if (!errorElement) return true;
+    errorElement.textContent = "";
+
+    if (
+      input.required &&
+      !input.value.trim() &&
+      input.name !== "correo_electronico"
+    ) {
+      errorElement.textContent = "Este campo es obligatorio.";
+      isValid = false;
+    } else if (input.name === "documento_identidad" && input.value.trim()) {
+      if (!/^\d{8,10}$/.test(input.value)) {
+        errorElement.textContent = "Debe tener entre 8 y 10 dígitos.";
+        isValid = false;
+      }
+    } else if (input.name === "telefono_contacto" && input.value.trim()) {
+      if (!/^\d{7,15}$/.test(input.value)) {
+        errorElement.textContent = "Teléfono inválido (7-15 dígitos).";
+        isValid = false;
+      }
+    } else if (input.name === "fecha_nacimiento" && input.value) {
+      const today = (
+        formContext.querySelector(
+          `[name="fecha_nacimiento"]`
+        ) as HTMLInputElement
+      )?.max; // Obtener max/min del campo correspondiente
+      const minDate = (
+        formContext.querySelector(
+          `[name="fecha_nacimiento"]`
+        ) as HTMLInputElement
+      )?.min;
+      if (input.value > today) {
+        errorElement.textContent = "La fecha no puede ser futura.";
+        isValid = false;
+      } else if (input.value < minDate) {
+        errorElement.textContent = "Fecha de nacimiento no válida.";
+        isValid = false;
+      }
+    } else if (input.name === "sexo" && input.required && !input.value) {
+      errorElement.textContent = "Seleccione una opción.";
+      isValid = false;
+    } else if (
+      input.name === "correo_electronico" &&
+      input.value.trim() !== ""
+    ) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
+        errorElement.textContent = "Formato de correo inválido.";
+        isValid = false;
+      }
+    }
+    input.classList.toggle("border-red-500", !isValid);
+    input.classList.toggle("border-gray-300", isValid);
+    return isValid;
+  }
+
+  function clearAllErrors(formElement: HTMLFormElement) {
+    const fieldsToValidate: Array<keyof Pacientes> = [
+      "nombre_completo",
+      "documento_identidad",
+      "fecha_nacimiento",
+      "sexo",
+      "telefono_contacto",
+      "correo_electronico",
+    ];
+    const errorIdPrefix =
+      formElement.id === "actualizarPacienteForm" ? "error_update_" : "error_";
+
+    fieldsToValidate.forEach((name) => {
+      const input = formElement.elements.namedItem(name) as
+        | HTMLInputElement
+        | HTMLSelectElement;
+      if (input) {
+        input.classList.remove("border-red-500");
+        input.classList.add("border-gray-300");
+        const errorElement = document.getElementById(`${errorIdPrefix}${name}`);
+        if (errorElement) errorElement.textContent = "";
+      }
+    });
+
+    // Limpiar mensajes de resumen
+    const errorSummary =
+      formElement.id === "actualizarPacienteForm"
+        ? updateFormErrorSummary
+        : agregarFormErrorSummary;
+    const successMessage =
+      formElement.id === "actualizarPacienteForm"
+        ? updateFormSuccessMessage
+        : agregarFormSuccessMessage;
+
+    if (errorSummary) errorSummary.textContent = "";
+    if (successMessage) successMessage.textContent = "";
+  }
+
+  // Validar en el evento blur para ambos formularios
+  const formFieldsToValidate: Array<keyof Pacientes> = [
+    "nombre_completo",
+    "documento_identidad",
+    "fecha_nacimiento",
+    "sexo",
+    "telefono_contacto",
+    "correo_electronico",
+  ];
+
+  formFieldsToValidate.forEach((name) => {
+    const inputAdd = agregarPacienteForm.elements.namedItem(name) as
+      | HTMLInputElement
+      | HTMLSelectElement;
+    const inputUpdate = actualizarPacienteForm.elements.namedItem(name) as
+      | HTMLInputElement
+      | HTMLSelectElement;
+
+    inputAdd?.addEventListener("blur", () =>
+      validateField(inputAdd, agregarPacienteForm)
+    );
+    inputUpdate?.addEventListener("blur", () =>
+      validateField(inputUpdate, actualizarPacienteForm)
+    );
+  });
+
+  // --- Envío del Formulario AGREGAR ---
+  agregarPacienteForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    clearAllErrors(agregarPacienteForm);
+    guardarPacienteBtn.disabled = true;
+
+    let isFormValid = true;
+    const formData = new FormData(agregarPacienteForm);
+    const pacienteDataFromForm: Record<string, any> = {};
+
+    formFieldsToValidate.forEach((name) => {
+      const inputElement = agregarPacienteForm.elements.namedItem(name) as
+        | HTMLInputElement
+        | HTMLSelectElement;
+      if (inputElement && !validateField(inputElement, agregarPacienteForm)) {
+        isFormValid = false;
+      }
+      pacienteDataFromForm[name] = formData.get(name) as string;
+    });
+
+    if (!isFormValid) {
+      agregarFormErrorSummary.textContent =
+        "Por favor, corrija los errores marcados.";
+      guardarPacienteBtn.disabled = false;
+      return;
+    }
+
+    const dataToSend: Pacientes = {
+      id: 0, // El ID será asignado por la BD, aquí es un placeholder
+      nombre_completo: pacienteDataFromForm.nombre_completo.trim(),
+      documento_identidad: pacienteDataFromForm.documento_identidad.trim(),
+      fecha_nacimiento: pacienteDataFromForm.fecha_nacimiento,
+      sexo: pacienteDataFromForm.sexo as "M" | "F",
+      telefono_contacto: pacienteDataFromForm.telefono_contacto.trim(),
+      correo_electronico:
+        pacienteDataFromForm.correo_electronico?.trim() || null,
+    };
+
+    try {
+      const result = await agregarPaciente(dataToSend);
+
+      if (result.success) {
+        // Para agregar, data puede ser un objeto de éxito o el nuevo paciente
+        agregarFormSuccessMessage.textContent =
+          "¡Paciente agregado exitosamente!";
+        // Aquí deberías recargar la lista de pacientes o añadir el nuevo paciente a la tabla
+        // Para simplificar, recargamos la página o volvemos a obtener los datos.
+        // Si tu API de agregar devuelve el paciente con ID, puedes usar addPacienteToTable.
+        // Dado que agregas, es mejor hacer una recarga completa de la tabla o la página.
+        setTimeout(() => {
+          closeModal(agregarModal, agregarModalContent);
+          location.reload(); // Recarga la página para ver el nuevo paciente
+        }, 1500);
+      } else {
+        agregarFormErrorSummary.textContent = `Error: ${result.error || "No se pudo agregar el paciente."}`;
+        guardarPacienteBtn.disabled = false;
+      }
+    } catch (error) {
+      console.error("Error en submit de agregar:", error);
+      agregarFormErrorSummary.textContent = `Error de conexión o del servidor: ${error instanceof Error ? error.message : "Desconocido"}`;
+      guardarPacienteBtn.disabled = false;
+    }
+  });
+
+  // --- Lógica para Abrir Modal de Actualización y Rellenar Campos ---
+  pacienteTableBody?.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement;
+    const editButton = target.closest(
+      ".edit-paciente-btn"
+    ) as HTMLButtonElement;
+
+    if (editButton) {
+      const id = parseInt(editButton.dataset.id || "0");
+      const nombre_completo = editButton.dataset.nombre_completo || "";
+      const fecha_nacimiento = editButton.dataset.fecha_nacimiento || "";
+      const sexo = (editButton.dataset.sexo || "") as "M" | "F";
+      const documento_identidad = editButton.dataset.documento_identidad || "";
+      const telefono_contacto = editButton.dataset.telefono_contacto || "";
+      const correo_electronico = editButton.dataset.correo_electronico || "";
+
+      // Rellenar los campos del modal de actualización
+      updatePacienteIdInput.value = String(id);
+      updateNombreCompletoInput.value = nombre_completo;
+      updateDocumentoIdentidadInput.value = documento_identidad;
+      updateFechaNacimientoInput.value = fecha_nacimiento;
+      updateSexoSelect.value = sexo;
+      updateTelefonoContactoInput.value = telefono_contacto;
+      updateCorreoElectronicoInput.value = correo_electronico;
+
+      clearAllErrors(actualizarPacienteForm); // Limpiar errores previos
+      updateFormErrorSummary.textContent = "";
+      updateFormSuccessMessage.textContent = "";
+      guardarActualizacionPacienteBtn.disabled = false;
+
+      openModal(actualizarModal, actualizarModalContent);
+    }
+  });
+
+  // --- Envío del Formulario ACTUALIZAR (nuevo) ---
+  actualizarPacienteForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    clearAllErrors(actualizarPacienteForm);
+    guardarActualizacionPacienteBtn.disabled = true;
+
+    let isFormValid = true;
+    const formData = new FormData(actualizarPacienteForm);
+    const pacienteDataFromForm: Record<string, any> = {};
+
+    // Incluir el ID del paciente
+    pacienteDataFromForm.id = parseInt(formData.get("id") as string);
+
+    formFieldsToValidate.forEach((name) => {
+      const inputElement = actualizarPacienteForm.elements.namedItem(name) as
+        | HTMLInputElement
+        | HTMLSelectElement;
+      if (
+        inputElement &&
+        !validateField(inputElement, actualizarPacienteForm)
+      ) {
+        isFormValid = false;
+      }
+      pacienteDataFromForm[name] = formData.get(name) as string;
+    });
+
+    if (!isFormValid) {
+      updateFormErrorSummary.textContent =
+        "Por favor, corrija los errores marcados.";
+      guardarActualizacionPacienteBtn.disabled = false;
+      return;
+    }
+
+    const dataToSend: Pacientes = {
+      id: pacienteDataFromForm.id,
+      nombre_completo: pacienteDataFromForm.nombre_completo.trim(),
+      documento_identidad: pacienteDataFromForm.documento_identidad.trim(),
+      fecha_nacimiento: pacienteDataFromForm.fecha_nacimiento,
+      sexo: pacienteDataFromForm.sexo as "M" | "F",
+      telefono_contacto: pacienteDataFromForm.telefono_contacto.trim(),
+      correo_electronico:
+        pacienteDataFromForm.correo_electronico?.trim() || null,
+    };
+
+    try {
+      const result = await actualizarPaciente(dataToSend);
+
+      if (result.success) {
+        updateFormSuccessMessage.textContent =
+          "¡Paciente actualizado exitosamente!";
+        // Actualizar la fila en la tabla o recargar la página
+        setTimeout(() => {
+          closeModal(actualizarModal, actualizarModalContent);
+          location.reload(); // Recarga la página para ver los cambios
+        }, 1500);
+      } else {
+        updateFormErrorSummary.textContent = `Error: ${result.error || "No se pudo actualizar el paciente."}`;
+        guardarActualizacionPacienteBtn.disabled = false;
+      }
+    } catch (error) {
+      console.error("Error en submit de actualizar:", error);
+      updateFormErrorSummary.textContent = `Error de conexión o del servidor: ${error instanceof Error ? error.message : "Desconocido"}`;
+      guardarActualizacionPacienteBtn.disabled = false;
+    }
+  });
+
+  // Función para agregar o actualizar una fila en la tabla (si se actualiza)
+  function updatePacienteInTable(paciente: Pacientes) {
+    if (!pacienteTableBody) return;
+
+    // Buscar la fila existente
+    const row = pacienteTableBody.querySelector(
+      `tr[data-paciente-id="${paciente.id}"]`
+    ) as HTMLTableRowElement;
+
+    if (row) {
+      // Actualizar los datos de la fila existente
+      row.cells[1].textContent = paciente.nombre_completo;
+      row.cells[2].textContent = paciente.documento_identidad;
+      row.cells[3].textContent = paciente.sexo;
+      row.cells[4].textContent = new Date(
+        paciente.fecha_nacimiento + "T00:00:00"
+      ).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      row.cells[5].textContent = paciente.telefono_contacto;
+      row.cells[6].textContent = paciente.correo_electronico || "N/A";
+
+      // Actualizar los data-attributes del botón de editar para la próxima edición
+      const editBtn = row.querySelector(
+        ".edit-paciente-btn"
+      ) as HTMLButtonElement;
+      if (editBtn) {
+        editBtn.dataset.nombre_completo = paciente.nombre_completo;
+        editBtn.dataset.fecha_nacimiento = paciente.fecha_nacimiento;
+        editBtn.dataset.sexo = paciente.sexo;
+        editBtn.dataset.documento_identidad = paciente.documento_identidad;
+        editBtn.dataset.telefono_contacto = paciente.telefono_contacto;
+        editBtn.dataset.correo_electronico = paciente.correo_electronico || "";
+      }
+    } else {
+      // Si la fila no existe (esto sería más para agregar, no para actualizar in-place)
+      // En este caso, para actualizar, la recarga de página es más simple
+      // o podrías agregar la lógica para añadir una nueva fila si, por alguna razón, no existía.
+      // Por ahora, asumimos que se edita una fila existente.
+    }
+  }
+
+  // Si tu función de `agregarPaciente` devuelve el nuevo paciente con un ID,
+  // puedes usar esta función para añadirlo a la tabla sin recargar la página.
+  // Sin embargo, `location.reload()` es más robusto si hay otros datos que se actualizan.
+  function addPacienteToTable(paciente: Pacientes) {
+    if (!pacienteTableBody) return;
+    const noDataRow = pacienteTableBody.querySelector('td[colspan="8"]'); // Ajustar colspan
+    if (noDataRow) noDataRow.parentElement?.remove();
+
+    const newRow = pacienteTableBody.insertRow(0);
+    newRow.className =
+      "border-b bg-white dark:bg-white dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-200 dark:text-black";
+    if (paciente.id) newRow.dataset.pacienteId = String(paciente.id);
+
+    newRow.innerHTML = `
+      <td class="w-4 p-4">
+        <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 userCheckbox" data-id="${paciente.id || ""}" />
+      </td>
+      <td class="px-6 py-4 text-gray-900 dark:text-black font-medium">${paciente.nombre_completo}</td>
+      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.documento_identidad}</td>
+      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.sexo}</td>
+      <td class="px-6 py-4 text-gray-700 dark:text-black">
+        ${new Date(paciente.fecha_nacimiento + "T00:00:00").toLocaleDateString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit" })}
+      </td>
+      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.telefono_contacto}</td>
+      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.correo_electronico || "N/A"}</td>
+      <td class="px-6 py-4 text-gray-700 dark:text-black">
+        <button
+            type="button"
+            class="edit-paciente-btn font-medium text-blue-600 hover:underline dark:text-blue-500"
+            data-id="${paciente.id}"
+            data-nombre_completo="${paciente.nombre_completo}"
+            data-fecha_nacimiento="${paciente.fecha_nacimiento}"
+            data-sexo="${paciente.sexo}"
+            data-documento_identidad="${paciente.documento_identidad}"
+            data-telefono_contacto="${paciente.telefono_contacto}"
+            data-correo_electronico="${paciente.correo_electronico || ""}"
+            title="Editar paciente"
+        >
+            <Icon name="edit" class="w-5 h-5" />
+        </button>
+      </td>
+    `;
+  }
 </script>
