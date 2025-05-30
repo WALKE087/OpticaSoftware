@@ -1,6 +1,7 @@
 import {
   actualizarPacientes,
   agregarPacientes,
+  eliminarPacienteById,
   obtenerPacientes,
 } from "../db/repositorios/repositorioPacientes";
 import type { Pacientes } from "../models/pacientes";
@@ -34,6 +35,19 @@ export async function actualizarPaciente(Pacientes: Pacientes) {
     return response;
   } catch (error) {
     console.error("Error al actualizar el paciente: ", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}
+
+export async function eliminarPaciente(id: number) {
+  try {
+    const response = await eliminarPacienteById(id);
+    return response;
+  } catch (error) {
+    console.error("Error al eliminar el paciente: ", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error desconocido",

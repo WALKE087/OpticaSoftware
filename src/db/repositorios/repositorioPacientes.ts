@@ -99,3 +99,28 @@ export async function actualizarPacientes(pacienteData: Pacientes) {
     };
   }
 }
+
+export async function eliminarPacienteById(id: number) {
+  try {
+    const response = await fetch("http://localhost:4321/api/eliminarPaciente", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.message || "Error al eliminar paciente");
+    }
+    const result = await response.json();
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error al eliminar el paciente:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}

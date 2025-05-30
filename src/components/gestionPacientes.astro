@@ -1,9 +1,7 @@
 ---
-// src/pages/pacientes.astro (o el nombre de tu archivo de página)
 import { Icon } from "astro-icon/components";
 import { getAllPacientes } from "../logic/servicioPacientes";
 import type { Pacientes } from "../models/pacientes";
-import { actualizarPaciente } from "../logic/servicioPacientes"; // Importar la función de actualización
 
 const response = await getAllPacientes();
 let pacientes: Pacientes[] = [];
@@ -26,7 +24,7 @@ if (response.success && Array.isArray(response.data)) {
       documento_identidad: apiPaciente.documento_identidad,
       telefono_contacto: apiPaciente.telefono_contacto,
       correo_electronico: apiPaciente.correo_electronico || null,
-      fecha_registro: apiPaciente.fecha_registro, // Asegúrate de incluir esto si lo necesitas en el front
+      fecha_registro: apiPaciente.fecha_registro,
     };
   });
 } else {
@@ -36,8 +34,6 @@ if (response.success && Array.isArray(response.data)) {
   );
 }
 
-console.log("aqui esta la lista de los pacientes", pacientes);
-
 const today = new Date().toISOString().split("T")[0];
 const minBirthDate = new Date();
 minBirthDate.setFullYear(minBirthDate.getFullYear() - 120);
@@ -45,7 +41,6 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
 ---
 
 <style>
-  /* Estilos para ambos modales */
   .modal-overlay {
     display: flex;
   }
@@ -75,6 +70,14 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
           class="flex items-center text-black hover:bg-green-300 p-1 rounded-md"
         >
           <Icon name="add" class="w-6 h-6 mr-2 text-[#29b73a96]" /> Agregar
+        </button>
+        <button
+          id="eliminarPacientesSeleccionadosBtn"
+          title="Eliminar pacientes seleccionados"
+          class="flex items-center text-black hover:bg-red-300 p-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled
+        >
+          <Icon name="eliminar" class="w-6 h-6 mr-2 text-[#dc2626]" /> Eliminar Seleccionados
         </button>
       </div>
       <div class="relative ml-auto">
@@ -114,7 +117,11 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     >
       <tr>
         <th scope="col" class="p-4">
-          <Icon name="square" class="w-5 h-5 text-gray-600" />
+          <input
+            type="checkbox"
+            id="selectAllCheckbox"
+            class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+          />
         </th>
         <th scope="col" class="px-6 py-3">Nombre Completo</th>
         <th scope="col" class="px-6 py-3">Documento</th>
@@ -136,7 +143,7 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
               <td class="w-4 p-4">
                 <input
                   type="checkbox"
-                  class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 userCheckbox"
+                  class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 pacienteCheckbox"
                   data-id={paciente.id}
                 />
               </td>
@@ -164,10 +171,10 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
               <td class="px-6 py-4 text-gray-700 dark:text-black">
                 {paciente.correo_electronico || "N/A"}
               </td>
-              <td class="px-6 py-4 text-gray-700 dark:text-black">
+              <td class="px-6 py-4 text-gray-700 dark:text-black flex items-center">
                 <button
                   type="button"
-                  class="edit-paciente-btn font-medium text-blue-600 hover:underline dark:text-blue-500"
+                  class="edit-paciente-btn font-medium text-blue-600 hover:underline dark:text-blue-500 mr-2"
                   data-id={paciente.id}
                   data-nombre_completo={paciente.nombre_completo}
                   data-fecha_nacimiento={paciente.fecha_nacimiento}
@@ -178,6 +185,14 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
                   title="Editar paciente"
                 >
                   <Icon name="actualizar" class="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  class="delete-paciente-btn font-medium text-red-600 hover:underline dark:text-red-500"
+                  data-id={paciente.id}
+                  title="Eliminar paciente"
+                >
+                  <Icon name="eliminar" class="w-5 h-5" />
                 </button>
               </td>
             </tr>
@@ -513,6 +528,7 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
   import {
     agregarPaciente,
     actualizarPaciente,
+    eliminarPaciente,
   } from "../logic/servicioPacientes";
   import type { Pacientes } from "../models/pacientes";
 
@@ -599,6 +615,17 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     "update_correo_electronico"
   ) as HTMLInputElement;
 
+  // --- Elementos de Eliminación Masiva ---
+  const eliminarPacientesSeleccionadosBtn = document.getElementById(
+    "eliminarPacientesSeleccionadosBtn"
+  ) as HTMLButtonElement;
+  const selectAllCheckbox = document.getElementById(
+    "selectAllCheckbox"
+  ) as HTMLInputElement;
+  const pacienteCheckboxes = document.querySelectorAll(
+    ".pacienteCheckbox"
+  ) as NodeListOf<HTMLInputElement>;
+
   // --- Lógica de Búsqueda ---
   let searchQuery = "";
   function filterPacientes() {
@@ -609,7 +636,7 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     ) as HTMLTableRowElement[];
 
     rows.forEach((row) => {
-      if (row.cells.length < 7) return; // Asegura que la fila tenga suficientes celdas
+      if (row.cells.length < 7) return;
       const nombre = row.cells[1]?.textContent?.toLowerCase() || "";
       const documento = row.cells[2]?.textContent?.toLowerCase() || "";
 
@@ -658,8 +685,8 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
   // Event Listeners para el modal AGREGAR
   abrirAgregarModalBtn?.addEventListener("click", () => {
     openModal(agregarModal, agregarModalContent);
-    agregarPacienteForm.reset(); // Limpiar formulario al abrir
-    (document.getElementById("sexo") as HTMLSelectElement).value = ""; // Resetear select
+    agregarPacienteForm.reset();
+    (document.getElementById("sexo") as HTMLSelectElement).value = "";
     clearAllErrors(agregarPacienteForm);
     agregarFormErrorSummary.textContent = "";
     agregarFormSuccessMessage.textContent = "";
@@ -676,7 +703,7 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
       closeModal(agregarModal, agregarModalContent);
   });
 
-  // Event Listeners para el modal ACTUALIZAR (nuevos)
+  // Event Listeners para el modal ACTUALIZAR
   cerrarActualizarModalBtn?.addEventListener("click", () =>
     closeModal(actualizarModal, actualizarModalContent)
   );
@@ -689,13 +716,11 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
   });
 
   // --- Lógica de Validación de Formularios ---
-  // Reutilizamos la validación para ambos formularios, usando el formulario como contexto
   function validateField(
     input: HTMLInputElement | HTMLSelectElement,
     formContext: HTMLFormElement
   ): boolean {
     let isValid = true;
-    // Prefijo de ID de error para el formulario de actualización
     const errorIdPrefix =
       formContext.id === "actualizarPacienteForm" ? "error_update_" : "error_";
     const errorElement = document.getElementById(
@@ -727,7 +752,7 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
         formContext.querySelector(
           `[name="fecha_nacimiento"]`
         ) as HTMLInputElement
-      )?.max; // Obtener max/min del campo correspondiente
+      )?.max;
       const minDate = (
         formContext.querySelector(
           `[name="fecha_nacimiento"]`
@@ -781,7 +806,6 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
       }
     });
 
-    // Limpiar mensajes de resumen
     const errorSummary =
       formElement.id === "actualizarPacienteForm"
         ? updateFormErrorSummary
@@ -795,7 +819,6 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     if (successMessage) successMessage.textContent = "";
   }
 
-  // Validar en el evento blur para ambos formularios
   const formFieldsToValidate: Array<keyof Pacientes> = [
     "nombre_completo",
     "documento_identidad",
@@ -849,7 +872,7 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     }
 
     const dataToSend: Pacientes = {
-      id: 0, // El ID será asignado por la BD, aquí es un placeholder
+      id: 0,
       nombre_completo: pacienteDataFromForm.nombre_completo.trim(),
       documento_identidad: pacienteDataFromForm.documento_identidad.trim(),
       fecha_nacimiento: pacienteDataFromForm.fecha_nacimiento,
@@ -863,16 +886,11 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
       const result = await agregarPaciente(dataToSend);
 
       if (result.success) {
-        // Para agregar, data puede ser un objeto de éxito o el nuevo paciente
         agregarFormSuccessMessage.textContent =
           "¡Paciente agregado exitosamente!";
-        // Aquí deberías recargar la lista de pacientes o añadir el nuevo paciente a la tabla
-        // Para simplificar, recargamos la página o volvemos a obtener los datos.
-        // Si tu API de agregar devuelve el paciente con ID, puedes usar addPacienteToTable.
-        // Dado que agregas, es mejor hacer una recarga completa de la tabla o la página.
         setTimeout(() => {
           closeModal(agregarModal, agregarModalContent);
-          location.reload(); // Recarga la página para ver el nuevo paciente
+          location.reload();
         }, 1500);
       } else {
         agregarFormErrorSummary.textContent = `Error: ${result.error || "No se pudo agregar el paciente."}`;
@@ -901,7 +919,6 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
       const telefono_contacto = editButton.dataset.telefono_contacto || "";
       const correo_electronico = editButton.dataset.correo_electronico || "";
 
-      // Rellenar los campos del modal de actualización
       updatePacienteIdInput.value = String(id);
       updateNombreCompletoInput.value = nombre_completo;
       updateDocumentoIdentidadInput.value = documento_identidad;
@@ -910,7 +927,7 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
       updateTelefonoContactoInput.value = telefono_contacto;
       updateCorreoElectronicoInput.value = correo_electronico;
 
-      clearAllErrors(actualizarPacienteForm); // Limpiar errores previos
+      clearAllErrors(actualizarPacienteForm);
       updateFormErrorSummary.textContent = "";
       updateFormSuccessMessage.textContent = "";
       guardarActualizacionPacienteBtn.disabled = false;
@@ -919,7 +936,6 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     }
   });
 
-  // --- Envío del Formulario ACTUALIZAR (nuevo) ---
   actualizarPacienteForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearAllErrors(actualizarPacienteForm);
@@ -929,7 +945,6 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     const formData = new FormData(actualizarPacienteForm);
     const pacienteDataFromForm: Record<string, any> = {};
 
-    // Incluir el ID del paciente
     pacienteDataFromForm.id = parseInt(formData.get("id") as string);
 
     formFieldsToValidate.forEach((name) => {
@@ -969,10 +984,9 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
       if (result.success) {
         updateFormSuccessMessage.textContent =
           "¡Paciente actualizado exitosamente!";
-        // Actualizar la fila en la tabla o recargar la página
         setTimeout(() => {
           closeModal(actualizarModal, actualizarModalContent);
-          location.reload(); // Recarga la página para ver los cambios
+          location.reload();
         }, 1500);
       } else {
         updateFormErrorSummary.textContent = `Error: ${result.error || "No se pudo actualizar el paciente."}`;
@@ -985,91 +999,144 @@ const minBirthDateString = minBirthDate.toISOString().split("T")[0];
     }
   });
 
-  // Función para agregar o actualizar una fila en la tabla (si se actualiza)
-  function updatePacienteInTable(paciente: Pacientes) {
-    if (!pacienteTableBody) return;
+  function toggleDeleteSelectedButton() {
+    const checkedCount = document.querySelectorAll(
+      ".pacienteCheckbox:checked"
+    ).length;
+    eliminarPacientesSeleccionadosBtn.disabled = checkedCount === 0;
+  }
 
-    // Buscar la fila existente
-    const row = pacienteTableBody.querySelector(
-      `tr[data-paciente-id="${paciente.id}"]`
-    ) as HTMLTableRowElement;
-
-    if (row) {
-      // Actualizar los datos de la fila existente
-      row.cells[1].textContent = paciente.nombre_completo;
-      row.cells[2].textContent = paciente.documento_identidad;
-      row.cells[3].textContent = paciente.sexo;
-      row.cells[4].textContent = new Date(
-        paciente.fecha_nacimiento + "T00:00:00"
-      ).toLocaleDateString("es-ES", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
-      row.cells[5].textContent = paciente.telefono_contacto;
-      row.cells[6].textContent = paciente.correo_electronico || "N/A";
-
-      // Actualizar los data-attributes del botón de editar para la próxima edición
-      const editBtn = row.querySelector(
-        ".edit-paciente-btn"
-      ) as HTMLButtonElement;
-      if (editBtn) {
-        editBtn.dataset.nombre_completo = paciente.nombre_completo;
-        editBtn.dataset.fecha_nacimiento = paciente.fecha_nacimiento;
-        editBtn.dataset.sexo = paciente.sexo;
-        editBtn.dataset.documento_identidad = paciente.documento_identidad;
-        editBtn.dataset.telefono_contacto = paciente.telefono_contacto;
-        editBtn.dataset.correo_electronico = paciente.correo_electronico || "";
+  pacienteTableBody?.addEventListener("change", (event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.classList.contains("pacienteCheckbox")) {
+      toggleDeleteSelectedButton();
+      if (!target.checked && selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
       }
-    } else {
-      // Si la fila no existe (esto sería más para agregar, no para actualizar in-place)
-      // En este caso, para actualizar, la recarga de página es más simple
-      // o podrías agregar la lógica para añadir una nueva fila si, por alguna razón, no existía.
-      // Por ahora, asumimos que se edita una fila existente.
+      const allChecked = Array.from(
+        document.querySelectorAll(".pacienteCheckbox")
+      ).every((cb) => (cb as HTMLInputElement).checked);
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = allChecked;
+      }
     }
-  }
+  });
 
-  // Si tu función de `agregarPaciente` devuelve el nuevo paciente con un ID,
-  // puedes usar esta función para añadirlo a la tabla sin recargar la página.
-  // Sin embargo, `location.reload()` es más robusto si hay otros datos que se actualizan.
-  function addPacienteToTable(paciente: Pacientes) {
-    if (!pacienteTableBody) return;
-    const noDataRow = pacienteTableBody.querySelector('td[colspan="8"]'); // Ajustar colspan
-    if (noDataRow) noDataRow.parentElement?.remove();
+  selectAllCheckbox?.addEventListener("change", (event) => {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    document.querySelectorAll(".pacienteCheckbox").forEach((checkbox) => {
+      (checkbox as HTMLInputElement).checked = isChecked;
+    });
+    toggleDeleteSelectedButton();
+  });
 
-    const newRow = pacienteTableBody.insertRow(0);
-    newRow.className =
-      "border-b bg-white dark:bg-white dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-200 dark:text-black";
-    if (paciente.id) newRow.dataset.pacienteId = String(paciente.id);
+  pacienteTableBody?.addEventListener("click", async (event) => {
+    const target = event.target as HTMLElement;
+    const deleteButton = target.closest(
+      ".delete-paciente-btn"
+    ) as HTMLButtonElement;
 
-    newRow.innerHTML = `
-      <td class="w-4 p-4">
-        <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 userCheckbox" data-id="${paciente.id || ""}" />
-      </td>
-      <td class="px-6 py-4 text-gray-900 dark:text-black font-medium">${paciente.nombre_completo}</td>
-      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.documento_identidad}</td>
-      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.sexo}</td>
-      <td class="px-6 py-4 text-gray-700 dark:text-black">
-        ${new Date(paciente.fecha_nacimiento + "T00:00:00").toLocaleDateString("es-ES", { year: "numeric", month: "2-digit", day: "2-digit" })}
-      </td>
-      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.telefono_contacto}</td>
-      <td class="px-6 py-4 text-gray-700 dark:text-black">${paciente.correo_electronico || "N/A"}</td>
-      <td class="px-6 py-4 text-gray-700 dark:text-black">
-        <button
-            type="button"
-            class="edit-paciente-btn font-medium text-blue-600 hover:underline dark:text-blue-500"
-            data-id="${paciente.id}"
-            data-nombre_completo="${paciente.nombre_completo}"
-            data-fecha_nacimiento="${paciente.fecha_nacimiento}"
-            data-sexo="${paciente.sexo}"
-            data-documento_identidad="${paciente.documento_identidad}"
-            data-telefono_contacto="${paciente.telefono_contacto}"
-            data-correo_electronico="${paciente.correo_electronico || ""}"
-            title="Editar paciente"
-        >
-            <Icon name="edit" class="w-5 h-5" />
-        </button>
-      </td>
-    `;
-  }
+    if (deleteButton) {
+      const id = parseInt(deleteButton.dataset.id || "0");
+      if (!id) {
+        alert("ID de paciente no encontrado para eliminar.");
+        return;
+      }
+
+      if (
+        !confirm(
+          `¿Estás seguro de que deseas eliminar al paciente con ID ${id}?`
+        )
+      ) {
+        return;
+      }
+
+      deleteButton.disabled = true;
+
+      try {
+        const result = await eliminarPaciente(id);
+        if (result.success) {
+          alert(`Paciente con ID ${id} eliminado exitosamente.`);
+          window.location.reload();
+        } else {
+          alert(`Error al eliminar paciente con ID ${id}: ${result.error}`);
+        }
+      } catch (error) {
+        alert(`Error de conexión al intentar eliminar paciente con ID ${id}.`);
+        console.error(`Error al eliminar paciente con ID ${id}:`, error);
+      } finally {
+        deleteButton.disabled = false;
+      }
+    }
+  });
+
+  eliminarPacientesSeleccionadosBtn?.addEventListener("click", async () => {
+    const selectedIds: number[] = [];
+    document
+      .querySelectorAll(".pacienteCheckbox:checked")
+      .forEach((checkbox) => {
+        const id = parseInt((checkbox as HTMLInputElement).dataset.id || "0");
+        if (id) {
+          selectedIds.push(id);
+        }
+      });
+
+    if (selectedIds.length === 0) {
+      alert("Por favor, selecciona al menos un paciente para eliminar.");
+      return;
+    }
+
+    if (
+      !confirm(
+        `¿Estás seguro de que deseas eliminar ${selectedIds.length} paciente(s) seleccionado(s)?`
+      )
+    ) {
+      return;
+    }
+
+    eliminarPacientesSeleccionadosBtn.disabled = true;
+    let allSuccessful = true;
+    let successCount = 0;
+
+    for (const id of selectedIds) {
+      try {
+        const result = await eliminarPaciente(id);
+        if (result.success) {
+          console.log(`Paciente con ID ${id} eliminado con éxito.`);
+          // La eliminación de la fila del DOM aquí es opcional si vas a recargar la página
+          // const rowToDelete = document.querySelector(`tr[data-paciente-id="${id}"]`);
+          // if (rowToDelete) {
+          //   rowToDelete.remove();
+          // }
+          successCount++;
+        } else {
+          allSuccessful = false;
+          console.error(
+            `Error al eliminar paciente con ID ${id}: ${result.error}`
+          );
+        }
+        location.reload();
+      } catch (error) {
+        allSuccessful = false;
+        console.error(
+          `Error de conexión al intentar eliminar paciente con ID ${id}:`,
+          error
+        );
+      }
+    }
+
+    if (allSuccessful) {
+      alert(
+        `Todos los ${successCount} paciente(s) seleccionado(s) han sido eliminados exitosamente.`
+      );
+    } else {
+      alert(
+        `Se eliminaron ${successCount} paciente(s). Hubo errores al eliminar otros. Revisa la consola para más detalles.`
+      );
+    }
+
+    location.reload();
+  });
+
+  toggleDeleteSelectedButton();
 </script>
