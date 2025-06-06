@@ -1,0 +1,1133 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface CitaConDetallesDeVista {
+  cita_id: number;
+  id_paciente: number;
+  paciente_nombre_completo: string;
+  paciente_documento_identidad: string;
+  paciente_sexo?: "M" | "F" | "O" | null;
+  paciente_fecha_nacimiento?: string;
+  paciente_telefono_contacto?: string;
+  paciente_correo_electronico?: string | null;
+  fecha_hora_cita: string;
+  tipo_cita: string | null;
+  estado_cita: string;
+  cita_notas: string | null;
+  fecha_registro_cita: string;
+}
+
+interface PacienteAgrupado {
+  id_paciente: number;
+  nombre_completo: string;
+  documento_identidad: string;
+  sexo?: "M" | "F" | "O" | null;
+  fecha_nacimiento?: string;
+  telefono_contacto?: string;
+  correo_electronico?: string | null;
+  citas: CitaConDetallesDeVista[];
+}
+
+interface PacienteSimple {
+  id: number;
+  nombre_completo: string;
+  documento_identidad: string;
+}
+
+let pacientesAgrupados: PacienteAgrupado[] = [];
+let errorFetching: string | null = null;
+
+const citasResponse = await fetch("http://localhost:4321/api/obtenerCitas");
+
+if (citasResponse.ok) {
+  const todasLasCitas: CitaConDetallesDeVista[] = await citasResponse.json();
+  const pacientesMap = new Map<number, PacienteAgrupado>();
+  todasLasCitas.forEach((cita) => {
+    if (!pacientesMap.has(cita.id_paciente)) {
+      pacientesMap.set(cita.id_paciente, {
+        id_paciente: cita.id_paciente,
+        nombre_completo: cita.paciente_nombre_completo,
+        documento_identidad: cita.paciente_documento_identidad,
+        sexo: cita.paciente_sexo,
+        fecha_nacimiento: cita.paciente_fecha_nacimiento,
+        telefono_contacto: cita.paciente_telefono_contacto,
+        correo_electronico: cita.paciente_correo_electronico,
+        citas: [],
+      });
+    }
+    pacientesMap.get(cita.id_paciente)?.citas.push(cita);
+  });
+  pacientesAgrupados = Array.from(pacientesMap.values());
+  pacientesAgrupados.forEach((p) => {
+    p.citas.sort(
+      (a, b) =>
+        new Date(b.fecha_hora_cita).getTime() -
+        new Date(a.fecha_hora_cita).getTime()
+    );
+  });
+} else {
+  errorFetching = "Error al cargar las citas: " + citasResponse.statusText;
+  try {
+    const errorBody = await citasResponse.json();
+    errorFetching += ` - ${errorBody.message || "No hay más detalles."}`;
+  } catch (e) {}
+  console.error(
+    `Error fetching citas (${citasResponse.status}):`,
+    errorFetching
+  );
+}
+
+const estadoCitaOptions = [
+  "Programada",
+  "Confirmada",
+  "Cancelada_Paciente",
+  "Cancelada_Clinica",
+  "Completada",
+  "No_Asistio",
+  "Reprogramada",
+];
+// --- FIN DE LÓGICA DE SERVIDOR ---
+---
+
+<style>
+  .modal-overlay {
+    display: none;
+  }
+  .modal-overlay.flex {
+    display: flex;
+  }
+  .modal-content {
+    transition:
+      transform 0.3s ease-out,
+      opacity 0.3s ease-out;
+  }
+  .modal-hidden {
+    opacity: 0;
+  }
+  .modal-hidden .modal-content {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  .input-error {
+    border-color: red !important;
+  }
+  .error-message {
+    color: red;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+    display: block;
+    min-height: 1em;
+  }
+
+  .paciente-search-results {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    z-index: 1000;
+    max-height: 150px;
+    overflow-y: auto;
+    width: 100%;
+  }
+  .paciente-search-results div {
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  .paciente-search-results div:hover {
+    background-color: #f0f0f0;
+  }
+</style>
+
+<div
+  class="overflow-x-auto shadow-md sm:rounded-lg h-full bg-[#e9eef6] p-4 pb-2"
+>
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between w-full">
+      <div class="flex items-center space-x-2">
+        <button
+          id="abrirModalAgregarCita"
+          title="Agendar nueva cita"
+          class="flex items-center text-black hover:bg-green-300 p-1 rounded-md"
+        >
+          <Icon name="add" class="w-6 h-6 mr-2 text-[#29b73a96]" /> Agregar Cita
+        </button>
+      </div>
+      <div class="relative ml-auto">
+        <div
+          class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+        >
+          <svg
+            class="w-4 h-4 text-gray-500 dark:text-gray-400"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 20 20"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"></path>
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="inputSearchPrincipal"
+          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-white focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Buscar Paciente por Documento..."
+        />
+      </div>
+    </div>
+  </div>
+
+  {
+    errorFetching && (
+      <div class="text-red-500 p-4 bg-red-100 rounded-md my-4">
+        {errorFetching}
+      </div>
+    )
+  }
+
+  <table
+    class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-200 mt-2"
+  >
+    <thead
+      class="text-xs uppercase bg-gray-200 dark:bg-blue-950 dark:text-white"
+    >
+      <tr>
+        <th scope="col" class="px-6 py-3">Nombre Completo del Paciente</th>
+        <th scope="col" class="px-6 py-3">Documento</th>
+        <th scope="col" class="px-6 py-3">Teléfono</th>
+        <th scope="col" class="px-6 py-3 text-center">Nro. Citas Registradas</th
+        >
+        <th scope="col" class="px-6 py-3">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tablaPrincipalBody">
+      {
+        pacientesAgrupados.length > 0 ? (
+          pacientesAgrupados.map((paciente) => (
+            <tr
+              class="border-b bg-white dark:bg-white dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-200 dark:text-black"
+              data-paciente-id={paciente.id_paciente}
+            >
+              <td class="px-6 py-4 text-gray-900 dark:text-black font-medium">
+                {paciente.nombre_completo}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                {paciente.documento_identidad}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                {paciente.telefono_contacto || "N/A"}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black text-center">
+                {paciente.citas.length}
+              </td>
+              <td class="px-6 py-4 text-gray-700 dark:text-black">
+                <button
+                  type="button"
+                  class="ver-citas-paciente-btn font-medium text-blue-600 hover:underline dark:text-blue-500"
+                  data-paciente-id={paciente.id_paciente}
+                  title="Ver/Gestionar Citas del Paciente"
+                >
+                  <Icon
+                    name="calendar-event"
+                    class="w-5 h-5 mr-1 inline text-red-700"
+                  />{" "}
+                  Ver Citas
+                </button>
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td
+              colspan="5"
+              class="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
+            >
+              {errorFetching
+                ? "No se pudieron cargar los datos."
+                : "No se encontraron pacientes con citas."}
+            </td>
+          </tr>
+        )
+      }
+    </tbody>
+  </table>
+</div>
+
+<div
+  id="agregarCitaModal"
+  class="fixed inset-0 z-50 items-center justify-center backdrop-blur-xs transition-opacity duration-300 ease-in-out modal-overlay modal-hidden"
+>
+  <div
+    class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out modal-content border-2"
+  >
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">Agendar Nueva Cita</h2>
+      <button
+        id="cerrarModalAgregarCitaBtn"
+        title="Cerrar modal"
+        class="text-gray-500 hover:text-gray-800 transition-colors"
+      >
+        <Icon name="close" class="w-6 h-6" />
+      </button>
+    </div>
+    <form id="agregarCitaForm" novalidate>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+        <div class="md:col-span-2 relative">
+          <label
+            for="buscarPacienteInput"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Paciente <span class="text-red-500">*</span></label
+          >
+          <input
+            type="text"
+            id="buscarPacienteInput"
+            placeholder="Buscar por cédula o nombre..."
+            autocomplete="off"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <input
+            type="hidden"
+            name="id_paciente"
+            id="id_paciente_seleccionado"
+          />
+          <div
+            id="listaResultadosPacientes"
+            class="paciente-search-results hidden"
+          >
+          </div>
+          <span class="error-message" id="error_id_paciente_seleccionado"
+          ></span>
+        </div>
+        <div>
+          <label
+            for="fecha_hora_cita"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Fecha y Hora <span class="text-red-500">*</span></label
+          >
+          <input
+            type="datetime-local"
+            name="fecha_hora_cita"
+            id="fecha_hora_cita"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          <span class="error-message" id="error_fecha_hora_cita"></span>
+        </div>
+        <div>
+          <label
+            for="tipo_cita"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Tipo de Cita <span class="text-red-500">*</span></label
+          >
+          <input
+            type="text"
+            name="tipo_cita"
+            id="tipo_cita"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Ej: Examen Visual"
+          />
+          <span class="error-message" id="error_tipo_cita"></span>
+        </div>
+        <div>
+          <label
+            for="estado_cita_agregar"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Estado <span class="text-red-500">*</span></label
+          >
+          <select
+            name="estado_cita"
+            id="estado_cita_agregar"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="Programada" selected>Programada</option>
+            <option value="Confirmada">Confirmada</option>
+          </select>
+          <span class="error-message" id="error_estado_cita_agregar"></span>
+        </div>
+        <div class="md:col-span-2">
+          <label
+            for="notas_cita"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Notas Adicionales</label
+          >
+          <textarea
+            name="notas"
+            id="notas_cita"
+            rows="3"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          ></textarea>
+        </div>
+      </div>
+      <div
+        id="agregarCitaFormErrorSummary"
+        class="text-red-600 text-sm mb-3 min-h-[1em]"
+      >
+      </div>
+      <div
+        id="agregarCitaFormSuccessMessage"
+        class="text-green-600 text-sm mb-3 min-h-[1em]"
+      >
+      </div>
+      <div class="flex justify-end space-x-3">
+        <button
+          type="button"
+          id="cancelarModalAgregarCitaBtn"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
+          >Cancelar</button
+        >
+        <button
+          type="submit"
+          id="guardarNuevaCitaBtn"
+          class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+          >Guardar Cita</button
+        >
+      </div>
+    </form>
+  </div>
+</div>
+
+<div
+  id="verCitasPacienteModal"
+  class="fixed inset-0 z-50 items-center justify-center backdrop-blur-xs transition-opacity duration-300 ease-in-out modal-overlay modal-hidden"
+>
+  <div
+    class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl transform transition-all duration-300 ease-in-out modal-content border-2"
+  >
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">
+        Citas de: <span id="nombrePacienteEnModalCitas"></span>
+      </h2>
+      <button
+        id="cerrarModalVerCitasBtn"
+        title="Cerrar modal"
+        class="text-gray-500 hover:text-gray-800 transition-colors"
+      >
+        <Icon name="close" class="w-6 h-6" />
+      </button>
+    </div>
+    <div id="listaCitasDelPaciente" class="max-h-96 overflow-y-auto">
+      <p class="text-center p-4">Seleccione un paciente para ver sus citas.</p>
+    </div>
+  </div>
+</div>
+
+<div
+  id="editarCitaModal"
+  class="fixed inset-0 z-50 items-center justify-center backdrop-blur-xs transition-opacity duration-300 ease-in-out modal-overlay modal-hidden"
+>
+  <div
+    class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out modal-content border-2"
+  >
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">Editar Cita</h2>
+      <button
+        id="cerrarModalEditarCitaBtn"
+        title="Cerrar modal"
+        class="text-gray-500 hover:text-gray-800 transition-colors"
+      >
+        <Icon name="close" class="w-6 h-6" />
+      </button>
+    </div>
+    <form id="editarCitaForm" novalidate>
+      <input type="hidden" id="edit_cita_id" name="cita_id" />
+      <input type="hidden" id="edit_id_paciente_cita" name="id_paciente" />
+      <input type="hidden" id="edit_original_fecha_hora_cita" />
+      <p class="mb-2">
+        Paciente: <strong id="nombre_paciente_edit_cita"></strong>
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+        <div>
+          <label
+            for="edit_fecha_hora_cita"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Nueva Fecha y Hora <span class="text-red-500">*</span></label
+          >
+          <input
+            type="datetime-local"
+            name="fecha_hora_cita"
+            id="edit_fecha_hora_cita"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          />
+          <span class="error-message" id="error_edit_fecha_hora_cita"></span>
+        </div>
+        <div>
+          <label
+            for="edit_estado_cita"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Estado de la Cita <span class="text-red-500">*</span></label
+          >
+          <select
+            name="estado_cita"
+            id="edit_estado_cita"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          >
+            {
+              estadoCitaOptions.map((estado) => (
+                <option value={estado}>{estado.replace(/_/g, " ")}</option>
+              ))
+            }
+          </select>
+          <span class="error-message" id="error_edit_estado_cita"></span>
+        </div>
+        <div class="md:col-span-2">
+          <label
+            for="edit_tipo_cita"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Tipo de Cita <span class="text-red-500">*</span></label
+          >
+          <input
+            type="text"
+            name="tipo_cita"
+            id="edit_tipo_cita"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+            placeholder="Ej: Examen Visual"
+          />
+          <span class="error-message" id="error_edit_tipo_cita"></span>
+        </div>
+        <div class="md:col-span-2">
+          <label
+            for="edit_notas_cita"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Notas Adicionales</label
+          >
+          <textarea
+            name="notas"
+            id="edit_notas_cita"
+            rows="3"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          ></textarea>
+        </div>
+      </div>
+      <div
+        id="editarCitaFormErrorSummary"
+        class="text-red-600 text-sm mb-3 min-h-[1em]"
+      >
+      </div>
+      <div
+        id="editarCitaFormSuccessMessage"
+        class="text-green-600 text-sm mb-3 min-h-[1em]"
+      >
+      </div>
+      <div class="flex justify-end space-x-3">
+        <button
+          type="button"
+          id="cancelarModalEditarCitaBtn"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
+          >Cancelar</button
+        >
+        <button
+          type="submit"
+          id="guardarEdicionCitaBtn"
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+          >Guardar Cambios</button
+        >
+      </div>
+    </form>
+  </div>
+</div>
+
+<script define:vars={{ pacientesAgrupados, estadoCitaOptions }}>
+  // --- Helper para mostrar/ocultar modales ---
+  function toggleModal(modalId, show) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      const modalContent = modal.querySelector(".modal-content");
+      if (show) {
+        modal.classList.remove("modal-hidden");
+        modal.classList.add("flex");
+        setTimeout(() => {
+          modal.classList.remove("opacity-0");
+          if (modalContent)
+            modalContent.classList.remove("opacity-0", "scale-95");
+        }, 10);
+      } else {
+        modal.classList.add("opacity-0");
+        if (modalContent) modalContent.classList.add("opacity-0", "scale-95");
+        setTimeout(() => {
+          modal.classList.add("modal-hidden");
+          modal.classList.remove("flex");
+        }, 300);
+      }
+    }
+  }
+
+  function resetForm(formElement, errorSummaryId, successMessageId) {
+    if (formElement) {
+      formElement.reset();
+      formElement
+        .querySelectorAll(".error-message")
+        .forEach((span) => (span.textContent = ""));
+      formElement
+        .querySelectorAll(".input-error")
+        .forEach((input) => input.classList.remove("input-error"));
+    }
+    if (errorSummaryId)
+      document.getElementById(errorSummaryId).textContent = "";
+    if (successMessageId)
+      document.getElementById(successMessageId).textContent = "";
+  }
+
+  // --- VALIDACIÓN GENÉRICA DE CAMPOS ---
+  function validateField(
+    inputElement,
+    errorElement,
+    validationFn,
+    customMessage
+  ) {
+    const value = inputElement.value;
+    // Si el input es hidden (como id_paciente_seleccionado), su "value" es lo que importa.
+    // Para otros, trim puede ser útil, pero depende del campo.
+    // Para `id_paciente_seleccionado`, no hacemos trim.
+
+    errorElement.textContent = ""; // Limpiar error previo
+    inputElement.classList.remove("input-error");
+
+    if (!validationFn(value, inputElement)) {
+      // Pasar inputElement para contextos especiales
+      inputElement.classList.add("input-error");
+      errorElement.textContent = customMessage || "Este campo es inválido.";
+      return false;
+    }
+    return true;
+  }
+
+  function isNotEmpty(value) {
+    return value && value.trim() !== "";
+  }
+
+  function isValidDateTime(value) {
+    if (!value) return false; // Asegurar que hay un valor antes de crear Date
+    return !isNaN(new Date(value).getTime());
+  }
+
+  function isFutureOrPresentDateTime(value) {
+    if (!isValidDateTime(value)) return false;
+    const inputDate = new Date(value);
+    const nowDate = new Date();
+    // Para datetime-local, la comparación directa es generalmente suficiente
+    // si el formato del input es compatible con el constructor de Date.
+    // Para ser más precisos y evitar problemas de segundos/milisegundos:
+    const nowComparable = new Date(
+      nowDate.getFullYear(),
+      nowDate.getMonth(),
+      nowDate.getDate(),
+      nowDate.getHours(),
+      nowDate.getMinutes()
+    );
+    const inputComparable = new Date(
+      inputDate.getFullYear(),
+      inputDate.getMonth(),
+      inputDate.getDate(),
+      inputDate.getHours(),
+      inputDate.getMinutes()
+    );
+    return inputComparable.getTime() >= nowComparable.getTime();
+  }
+
+  // --- Modal Agregar Cita ---
+  const agregarCitaModal = document.getElementById("agregarCitaModal");
+  const abrirModalAgregarCitaBtn = document.getElementById(
+    "abrirModalAgregarCita"
+  );
+  const cerrarModalAgregarCitaBtn = document.getElementById(
+    "cerrarModalAgregarCitaBtn"
+  );
+  const cancelarModalAgregarCitaBtn = document.getElementById(
+    "cancelarModalAgregarCitaBtn"
+  );
+  const agregarCitaForm = document.getElementById("agregarCitaForm");
+  const buscarPacienteInput = document.getElementById("buscarPacienteInput");
+  const listaResultadosPacientesDiv = document.getElementById(
+    "listaResultadosPacientes"
+  );
+  const idPacienteSeleccionadoInput = document.getElementById(
+    "id_paciente_seleccionado"
+  );
+  const fechaHoraCitaInput = document.getElementById("fecha_hora_cita");
+  const tipoCitaInput = document.getElementById("tipo_cita");
+  const estadoCitaAgregarInput = document.getElementById("estado_cita_agregar");
+  const notasCitaInput = document.getElementById("notas_cita");
+
+  abrirModalAgregarCitaBtn.addEventListener("click", () => {
+    resetForm(
+      agregarCitaForm,
+      "agregarCitaFormErrorSummary",
+      "agregarCitaFormSuccessMessage"
+    );
+    idPacienteSeleccionadoInput.value = "";
+    buscarPacienteInput.value = "";
+    listaResultadosPacientesDiv.innerHTML = "";
+    listaResultadosPacientesDiv.classList.add("hidden");
+
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const localNow = new Date(now.getTime() - offset * 60 * 1000);
+    fechaHoraCitaInput.min = localNow.toISOString().slice(0, 16);
+    // fechaHoraCitaInput.value = localNow.toISOString().slice(0, 16); // Opcional: pre-llenar con ahora
+
+    toggleModal("agregarCitaModal", true);
+  });
+  cerrarModalAgregarCitaBtn.addEventListener("click", () =>
+    toggleModal("agregarCitaModal", false)
+  );
+  cancelarModalAgregarCitaBtn.addEventListener("click", () =>
+    toggleModal("agregarCitaModal", false)
+  );
+
+  let debounceTimer;
+  buscarPacienteInput.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    const query = buscarPacienteInput.value.trim();
+    idPacienteSeleccionadoInput.value = "";
+    document.getElementById("error_id_paciente_seleccionado").textContent = ""; // Limpiar error si empieza a buscar de nuevo
+    buscarPacienteInput.classList.remove("input-error");
+
+    if (query.length < 2) {
+      // Empezar a buscar con al menos 2 caracteres
+      listaResultadosPacientesDiv.innerHTML = "";
+      listaResultadosPacientesDiv.classList.add("hidden");
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:4321/api/buscarCedulaPaciente?cedula=${encodeURIComponent(query)}`
+        );
+        if (!response.ok) {
+          const errData = await response
+            .json()
+            .catch(() => ({ message: "Error al buscar pacientes" }));
+          throw new Error(errData.message);
+        }
+        const pacientesEncontrados = await response.json();
+
+        listaResultadosPacientesDiv.innerHTML = "";
+        if (pacientesEncontrados.length > 0) {
+          pacientesEncontrados.forEach((paciente) => {
+            const div = document.createElement("div");
+            div.textContent = `${paciente.nombre_completo} (C.C: ${paciente.documento_identidad})`;
+            div.dataset.id = paciente.id; // Asegúrate que tu API devuelva 'id'
+            div.addEventListener("click", () => {
+              idPacienteSeleccionadoInput.value = paciente.id;
+              buscarPacienteInput.value = `${paciente.nombre_completo} (C.C: ${paciente.documento_identidad})`;
+              listaResultadosPacientesDiv.classList.add("hidden");
+              listaResultadosPacientesDiv.innerHTML = "";
+              validateField(
+                idPacienteSeleccionadoInput,
+                document.getElementById("error_id_paciente_seleccionado"),
+                isNotEmpty,
+                "Debe seleccionar un paciente."
+              );
+            });
+            listaResultadosPacientesDiv.appendChild(div);
+          });
+          listaResultadosPacientesDiv.classList.remove("hidden");
+        } else {
+          const noResultDiv = document.createElement("div");
+          noResultDiv.textContent = "No se encontraron pacientes.";
+          noResultDiv.classList.add("text-gray-500", "p-2");
+          listaResultadosPacientesDiv.appendChild(noResultDiv);
+          listaResultadosPacientesDiv.classList.remove("hidden");
+        }
+      } catch (error) {
+        console.error("Error en búsqueda de pacientes:", error);
+        listaResultadosPacientesDiv.innerHTML = `<div class="text-red-500 p-2">Error: ${error.message}</div>`;
+        listaResultadosPacientesDiv.classList.remove("hidden");
+      }
+    }, 350);
+  });
+
+  document.addEventListener("click", function (event) {
+    if (buscarPacienteInput && listaResultadosPacientesDiv) {
+      // Chequear si existen
+      if (
+        !buscarPacienteInput.contains(event.target) &&
+        !listaResultadosPacientesDiv.contains(event.target)
+      ) {
+        listaResultadosPacientesDiv.classList.add("hidden");
+      }
+    }
+  });
+
+  agregarCitaForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const errorSummaryEl = document.getElementById(
+      "agregarCitaFormErrorSummary"
+    );
+    const successMessageEl = document.getElementById(
+      "agregarCitaFormSuccessMessage"
+    );
+    errorSummaryEl.textContent = "";
+    successMessageEl.textContent = "";
+
+    let formIsValid = true;
+    formIsValid &= validateField(
+      idPacienteSeleccionadoInput,
+      document.getElementById("error_id_paciente_seleccionado"),
+      isNotEmpty,
+      "Debe seleccionar un paciente."
+    );
+    formIsValid &= validateField(
+      fechaHoraCitaInput,
+      document.getElementById("error_fecha_hora_cita"),
+      isFutureOrPresentDateTime,
+      "La fecha y hora no pueden ser anteriores al momento actual."
+    );
+    formIsValid &= validateField(
+      tipoCitaInput,
+      document.getElementById("error_tipo_cita"),
+      isNotEmpty,
+      "El tipo de cita es obligatorio."
+    );
+    formIsValid &= validateField(
+      estadoCitaAgregarInput,
+      document.getElementById("error_estado_cita_agregar"),
+      isNotEmpty,
+      "El estado es obligatorio."
+    );
+
+    if (!formIsValid) {
+      errorSummaryEl.textContent =
+        "Por favor, corrija los errores en el formulario.";
+      return;
+    }
+
+    const citaData = {
+      id_paciente: parseInt(idPacienteSeleccionadoInput.value),
+      fecha_hora_cita: fechaHoraCitaInput.value,
+      tipo_cita: tipoCitaInput.value.trim(),
+      estado_cita: estadoCitaAgregarInput.value,
+      notas: notasCitaInput.value.trim() || null,
+    };
+
+    try {
+      const response = await fetch("http://localhost:4321/api/agregarCitas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(citaData),
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(result.message || `Error ${response.status}`);
+      successMessageEl.textContent =
+        result.message || "Cita agregada con éxito!";
+      setTimeout(() => {
+        toggleModal("agregarCitaModal", false);
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error("Error al agregar cita:", error);
+      errorSummaryEl.textContent = error.message || "Error al guardar la cita.";
+    }
+  });
+
+  // --- Modal Ver/Gestionar Citas de Paciente ---
+  const verCitasPacienteModal = document.getElementById(
+    "verCitasPacienteModal"
+  );
+  const cerrarModalVerCitasBtn = document.getElementById(
+    "cerrarModalVerCitasBtn"
+  );
+  const listaCitasDelPacienteDiv = document.getElementById(
+    "listaCitasDelPaciente"
+  );
+  const nombrePacienteEnModalCitasSpan = document.getElementById(
+    "nombrePacienteEnModalCitas"
+  );
+
+  document.querySelectorAll(".ver-citas-paciente-btn").forEach((button) => {
+    button.addEventListener("click", function () {
+      const pacienteId = parseInt(this.dataset.pacienteId);
+      const paciente = pacientesAgrupados.find(
+        (p) => p.id_paciente === pacienteId
+      );
+      if (paciente) {
+        nombrePacienteEnModalCitasSpan.textContent = paciente.nombre_completo;
+        renderCitasDelPaciente(paciente.citas, paciente); // paciente es pasado aquí
+        toggleModal("verCitasPacienteModal", true);
+      }
+    });
+  });
+  if (cerrarModalVerCitasBtn)
+    cerrarModalVerCitasBtn.addEventListener("click", () =>
+      toggleModal("verCitasPacienteModal", false)
+    );
+
+  function renderCitasDelPaciente(citas, paciente) {
+    // paciente es recibido como parámetro
+    if (!citas || citas.length === 0) {
+      listaCitasDelPacienteDiv.innerHTML =
+        '<p class="text-center p-4 text-gray-500">Este paciente no tiene citas registradas.</p>';
+      return;
+    }
+    let html = `<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha/Hora</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+        </tr></thead><tbody class="bg-white divide-y divide-gray-200">`;
+    citas.forEach((cita) => {
+      html += `<tr data-cita-id="${cita.cita_id}">
+        <td class="px-4 py-2 whitespace-nowrap text-sm">${new Date(cita.fecha_hora_cita).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}</td>
+        <td class="px-4 py-2 whitespace-nowrap text-sm">${cita.tipo_cita || "N/A"}</td>
+        <td class="px-4 py-2 whitespace-nowrap text-sm">${cita.estado_cita.replace(/_/g, " ")}</td>
+        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+            <button class="text-indigo-600 hover:text-indigo-900 editar-cita-btn" data-cita-id="${cita.cita_id}" data-paciente-id="${paciente.id_paciente}" title="Editar Cita">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12V7.172l5-5L14.828 7l-5 5H5z" /></svg> Editar
+            </button>
+            <button class="text-red-600 hover:text-red-900 ml-3 eliminar-cita-btn" data-cita-id="${cita.cita_id}" title="Eliminar Cita">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg> Eliminar
+            </button>
+        </td></tr>`;
+    });
+    html += "</tbody></table>";
+    listaCitasDelPacienteDiv.innerHTML = html;
+
+    listaCitasDelPacienteDiv
+      .querySelectorAll(".editar-cita-btn")
+      .forEach((btn) =>
+        btn.addEventListener("click", handleAbrirModalEditarCita)
+      );
+    listaCitasDelPacienteDiv
+      .querySelectorAll(".eliminar-cita-btn")
+      .forEach((btn) => btn.addEventListener("click", handleEliminarCita));
+  }
+
+  // --- Modal Editar Cita ---
+  const editarCitaModal = document.getElementById("editarCitaModal");
+  const cerrarModalEditarCitaBtn = document.getElementById(
+    "cerrarModalEditarCitaBtn"
+  );
+  const cancelarModalEditarCitaBtn = document.getElementById(
+    "cancelarModalEditarCitaBtn"
+  );
+  const editarCitaForm = document.getElementById("editarCitaForm");
+  const nombrePacienteEditCitaSpan = document.getElementById(
+    "nombre_paciente_edit_cita"
+  );
+  const editFechaHoraCitaInput = document.getElementById(
+    "edit_fecha_hora_cita"
+  );
+  const editEstadoCitaInput = document.getElementById("edit_estado_cita");
+  const editTipoCitaInput = document.getElementById("edit_tipo_cita");
+  const editNotasCitaInput = document.getElementById("edit_notas_cita");
+  const editOriginalFechaHoraCitaInput = document.getElementById(
+    "edit_original_fecha_hora_cita"
+  );
+
+  if (cerrarModalEditarCitaBtn)
+    cerrarModalEditarCitaBtn.addEventListener("click", () =>
+      toggleModal("editarCitaModal", false)
+    );
+  if (cancelarModalEditarCitaBtn)
+    cancelarModalEditarCitaBtn.addEventListener("click", () =>
+      toggleModal("editarCitaModal", false)
+    );
+
+  function handleAbrirModalEditarCita(event) {
+    const citaId = parseInt(event.currentTarget.dataset.citaId);
+    const pacienteId = parseInt(event.currentTarget.dataset.pacienteId);
+    const paciente = pacientesAgrupados.find(
+      (p) => p.id_paciente === pacienteId
+    );
+    const cita = paciente?.citas.find((c) => c.cita_id === citaId);
+
+    if (cita && paciente) {
+      resetForm(
+        editarCitaForm,
+        "editarCitaFormErrorSummary",
+        "editarCitaFormSuccessMessage"
+      );
+      document.getElementById("edit_cita_id").value = cita.cita_id;
+      document.getElementById("edit_id_paciente_cita").value = cita.id_paciente;
+      nombrePacienteEditCitaSpan.textContent = paciente.nombre_completo;
+
+      const fechaHora = new Date(cita.fecha_hora_cita);
+      const offset = fechaHora.getTimezoneOffset();
+      const fechaLocal = new Date(fechaHora.getTime() - offset * 60 * 1000);
+      const fechaLocalISO = fechaLocal.toISOString().slice(0, 16);
+      editFechaHoraCitaInput.value = fechaLocalISO;
+      editOriginalFechaHoraCitaInput.value = fechaLocalISO;
+
+      const now = new Date();
+      const localNowForMin = new Date(now.getTime() - offset * 60 * 1000);
+      editFechaHoraCitaInput.min = localNowForMin.toISOString().slice(0, 16);
+
+      editEstadoCitaInput.value = cita.estado_cita;
+      editTipoCitaInput.value = cita.tipo_cita || "";
+      editNotasCitaInput.value = cita.cita_notas || "";
+      toggleModal("editarCitaModal", true);
+    }
+  }
+
+  if (editarCitaForm)
+    editarCitaForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const errorSummaryEl = document.getElementById(
+        "editarCitaFormErrorSummary"
+      );
+      const successMessageEl = document.getElementById(
+        "editarCitaFormSuccessMessage"
+      );
+      errorSummaryEl.textContent = "";
+      successMessageEl.textContent = "";
+
+      const citaId = document.getElementById("edit_cita_id").value;
+      const fechaOriginal = editOriginalFechaHoraCitaInput.value;
+      const nuevaFecha = editFechaHoraCitaInput.value;
+      const nuevoEstado = editEstadoCitaInput.value;
+
+      let formIsValid = true;
+      if (nuevaFecha !== fechaOriginal || nuevoEstado === "Reprogramada") {
+        formIsValid &= validateField(
+          editFechaHoraCitaInput,
+          document.getElementById("error_edit_fecha_hora_cita"),
+          isFutureOrPresentDateTime,
+          "Si reprograma o cambia fecha, la nueva fecha y hora no pueden ser anteriores al momento actual."
+        );
+      } else {
+        document.getElementById("error_edit_fecha_hora_cita").textContent = "";
+        editFechaHoraCitaInput.classList.remove("input-error");
+      }
+      formIsValid &= validateField(
+        editEstadoCitaInput,
+        document.getElementById("error_edit_estado_cita"),
+        isNotEmpty,
+        "El estado es obligatorio."
+      );
+      formIsValid &= validateField(
+        editTipoCitaInput,
+        document.getElementById("error_edit_tipo_cita"),
+        isNotEmpty,
+        "El tipo de cita es obligatorio."
+      );
+
+      if (!formIsValid) {
+        errorSummaryEl.textContent =
+          "Por favor, corrija los errores en el formulario.";
+        return;
+      }
+
+      const citaEditData = {
+        id_paciente: parseInt(
+          document.getElementById("edit_id_paciente_cita").value
+        ),
+        fecha_hora_cita: nuevaFecha,
+        tipo_cita: editTipoCitaInput.value.trim(),
+        estado_cita: nuevoEstado,
+        notas: editNotasCitaInput.value.trim() || null,
+      };
+
+      try {
+        // !!! SUSTITUYE ESTO CON TU LLAMADA API REAL !!!
+        console.log(
+          "Simulando actualización para cita ID:",
+          citaId,
+          citaEditData
+        );
+        const response = await fetch(
+          `http://localhost:4321/api/citas/${citaId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(citaEditData),
+          }
+        );
+        const result = await response.json();
+        if (!response.ok)
+          throw new Error(result.message || `Error ${response.status}`);
+        successMessageEl.textContent =
+          result.message || "Cita actualizada con éxito!";
+        // FIN SIMULACIÓN
+        setTimeout(() => {
+          toggleModal("editarCitaModal", false);
+          toggleModal("verCitasPacienteModal", false);
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        console.error("Error al actualizar cita:", error);
+        errorSummaryEl.textContent =
+          error.message || "Error al guardar cambios en la cita.";
+      }
+    });
+
+  // --- Eliminar Cita ---
+  async function handleEliminarCita(event) {
+    const citaId = parseInt(event.currentTarget.dataset.citaId);
+    if (!confirm(`¿Estás seguro de que deseas eliminar la cita ID ${citaId}?`))
+      return;
+
+    try {
+      // !!! SUSTITUYE ESTO CON TU LLAMADA API REAL !!!
+      console.log("Simulando eliminación para cita ID:", citaId);
+      const response = await fetch(
+        `http://localhost:4321/api/citas/${citaId}`,
+        {
+          // Asumiendo API
+          method: "DELETE",
+        }
+      );
+      // const result = await response.json(); // O .text()
+      if (!response.ok) {
+        const errData = await response
+          .json()
+          .catch(() => ({ message: "Error al eliminar cita" }));
+        throw new Error(errData.message || `Error ${response.status}`);
+      }
+      // FIN SIMULACIÓN
+      alert("Cita eliminada con éxito!"); // O usa un toast/notificación más elegante
+
+      toggleModal("verCitasPacienteModal", false);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error al eliminar cita:", error);
+      alert(error.message || "Error al eliminar la cita.");
+    }
+  }
+
+  // --- Búsqueda en Tabla Principal (Pacientes) ---
+  let searchQueryPrincipal = "";
+  const inputSearchPrincipal = document.getElementById("inputSearchPrincipal");
+  const tablaPrincipalBody = document.getElementById("tablaPrincipalBody");
+
+  function filterTablaPrincipal() {
+    if (!tablaPrincipalBody) return; // Guard clause
+    const search = searchQueryPrincipal.toLowerCase();
+    const rows = Array.from(tablaPrincipalBody.children);
+
+    rows.forEach((row) => {
+      if (!(row instanceof HTMLElement) || row.children.length < 2) return;
+
+      const nombreCompletoEl = row.children[0];
+      const documentoEl = row.children[1];
+
+      const nombreCompleto = nombreCompletoEl
+        ? nombreCompletoEl.textContent.toLowerCase()
+        : "";
+      const documento = documentoEl
+        ? documentoEl.textContent.toLowerCase()
+        : "";
+
+      if (nombreCompleto.includes(search) || documento.includes(search)) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  }
+  if (inputSearchPrincipal)
+    inputSearchPrincipal.addEventListener("input", (event) => {
+      searchQueryPrincipal = event.target.value;
+      filterTablaPrincipal();
+    });
+</script>

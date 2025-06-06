@@ -2,10 +2,10 @@
 import GestionUsuarios from "../components/gestionUsuarios.astro";
 import GestionProductos from "../components/gestionProductos.astro";
 import GestionPacientes from "../components/gestionPacientes.astro";
-import GestionAgendamiento from "../components/gestionAgendamiento.astro";
 import Layout from "../layouts/LayoutAdmin.astro";
 import Sidebar from "../components/UI/sidebar.astro";
 import { protectRoute } from "../db/repositorios/protegerRutas";
+import GestionCitas from "../components/gestionCitas.astro";
 
 const user = await protectRoute(Astro, "1");
 if (!user) {
@@ -27,7 +27,7 @@ switch (view) {
     SelectedComponent = GestionPacientes;
     break;
   case "gestion-agendamiento":
-    SelectedComponent = GestionAgendamiento;
+    SelectedComponent = GestionCitas;
     break;
   default:
     SelectedComponent = GestionUsuarios;
